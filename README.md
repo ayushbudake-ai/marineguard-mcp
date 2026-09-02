@@ -12,19 +12,32 @@
 
 ---
 
-## 🔗 Live Demo
+## 🚀 Live Demo — Click to Open
 
 <div align="center">
 
-| | Link |
-|---|---|
-| 🌐 **Landing Site** | [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Site-0ea5e9?style=for-the-badge&logo=github)](https://ayushbudake-ai.github.io/marineguard-mcp/) |
-| 🚀 **Web App** | [![Streamlit App](https://img.shields.io/badge/Streamlit-Open%20Live%20App-ff4b4b?style=for-the-badge&logo=streamlit)](https://marineguard-mcp.streamlit.app) |
-| 📦 **Source Code** | [![GitHub Repo](https://img.shields.io/badge/GitHub-ayushbudake--ai/marineguard--mcp-181717?style=for-the-badge&logo=github)](https://github.com/ayushbudake-ai/marineguard-mcp) |
+[![Mission Control](https://img.shields.io/badge/🎮%20Mission%20Control%20Dashboard-OPEN%20LIVE%20DEMO-38bdf8?style=for-the-badge)](https://ayushbudake-ai.github.io/marineguard-mcp/demo.html)
 
-> **👆 Click any button above to open the live demo instantly — no install needed!**
+[![Landing Page](https://img.shields.io/badge/🌐%20Landing%20Page-View%20Architecture-0ea5e9?style=for-the-badge&logo=github)](https://ayushbudake-ai.github.io/marineguard-mcp/)
+[![GitHub Repo](https://img.shields.io/badge/📦%20Source%20Code-ayushbudake--ai-181717?style=for-the-badge&logo=github)](https://github.com/ayushbudake-ai/marineguard-mcp)
+[![Streamlit App](https://img.shields.io/badge/🐍%20Streamlit%20App-Python%20Backend-ff4b4b?style=for-the-badge&logo=streamlit)](https://marineguard-mcp.streamlit.app)
 
 </div>
+
+### 🎮 What's inside the Mission Control Demo
+
+| Feature | Description |
+|---------|-------------|
+| 📡 **Sonar Waterfall** | Live animated 400 kHz side-scan sonar with debris highlights & shadows |
+| 🛰 **AUV Telemetry** | Real-time depth, battery, speed, heading gauges |
+| 🗺 **Track Map** | Mission path plot with colour-coded detection markers |
+| 🎯 **Detection Feed** | Auto-generates new debris targets every ~10 s with risk classification |
+| 🔥 **Firewall Panel** | LOW / MEDIUM / HIGH / CRITICAL events with live glow animation |
+| 🔬 **Evidence Overlay** | SSS + Optical + SAM2 mask + Bathymetry composite per target |
+| 🔊 **Sensor Waveforms** | Animated signal feeds for all 4 sensors |
+| 📋 **System Log** | Live mission event log with timestamps |
+
+> **No install needed — runs entirely in the browser.**
 
 ---
 
