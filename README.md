@@ -12,6 +12,22 @@
 
 ---
 
+## 🔗 Live Demo
+
+<div align="center">
+
+| | Link |
+|---|---|
+| 🌐 **Landing Site** | [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Site-0ea5e9?style=for-the-badge&logo=github)](https://ayushbudake-ai.github.io/marineguard-mcp/) |
+| 🚀 **Web App** | [![Streamlit App](https://img.shields.io/badge/Streamlit-Open%20Live%20App-ff4b4b?style=for-the-badge&logo=streamlit)](https://marineguard-mcp.streamlit.app) |
+| 📦 **Source Code** | [![GitHub Repo](https://img.shields.io/badge/GitHub-ayushbudake--ai/marineguard--mcp-181717?style=for-the-badge&logo=github)](https://github.com/ayushbudake-ai/marineguard-mcp) |
+
+> **👆 Click any button above to open the live demo instantly — no install needed!**
+
+</div>
+
+---
+
 ## Overview
 
 **MarineGuard MCP** is an autonomous **Model Context Protocol (MCP)** server that transforms any underwater survey vehicle (AUV / ROV) into a safe, explainable, real-time debris-detection agent. Built for SIH26057, it ingests multi-modal sensor streams (side-scan sonar, MBES bathymetry, 4K stereo optical, SAS, CTD) and produces legally auditable evidence packages for the Ministry of Earth Sciences.
