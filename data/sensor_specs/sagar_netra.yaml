@@ -1,0 +1,59 @@
+platform:
+  id: "sagar_netra_auv01"
+  name: "Sagar Netra (AUV-01)"
+  type: "AUV"
+  organization: "Ministry of Earth Sciences (MoES) Stand-in"
+  compute: "NVIDIA Jetson AGX Xavier (32 TOPS)"
+  storage: "2 TB NVMe + 500 GB buffer"
+  comms:
+    acoustic_modem: "10 kbps"
+    surface_link: "WiFi 6 / Satellite"
+
+sensors:
+  - id: "side_scan_01"
+    name: "EdgeTech 4200 Side-Scan Sonar"
+    type: "sonar"
+    sub_type: "side_scan"
+    frequency_khz: [400, 900]
+    swath_m: 150.0
+    resolution_cm: 5.0
+    format: "XTF"
+    lever_arm: [0.5, 0.0, -0.2]
+    status: "active"
+
+  - id: "mbes_01"
+    name: "Kongsberg EM2040 MBES"
+    type: "bathymetry"
+    sub_type: "multibeam"
+    frequency_khz: [200, 400]
+    swath_m: 200.0
+    resolution_cm: 10.0
+    format: "GSF"
+    lever_arm: [1.0, 0.0, -0.5]
+    status: "active"
+
+  - id: "optical_01"
+    name: "4K Stereo Optical Camera System"
+    type: "optical"
+    sub_type: "stereo_rgb"
+    fov_deg: 120.0
+    fps: 30
+    format: "GenICam"
+    lever_arm: [1.8, 0.0, -0.4]
+    status: "active"
+
+  - id: "usbl_01"
+    name: "iXblue GAPS USBL Navigation"
+    type: "navigation"
+    sub_type: "usbl"
+    accuracy_m: 0.1
+    format: "USBL UDP"
+    status: "active"
+
+  - id: "ctd_01"
+    name: "Sea-Bird SBE 49 FastCAT CTD"
+    type: "oceanographic"
+    sub_type: "ctd"
+    sampling_hz: 16
+    format: "NMEA"
+    status: "active"

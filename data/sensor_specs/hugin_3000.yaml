@@ -1,0 +1,59 @@
+platform:
+  id: "hugin_3000"
+  name: "Kongsberg HUGIN 3000"
+  type: "AUV"
+  organization: "Kongsberg Maritime Commercial Platform"
+  compute: "Intel NUC + Dedicated GPU"
+  storage: "4 TB NVMe"
+  comms:
+    acoustic_modem: "15 kbps"
+    surface_link: "RF Link / WiFi"
+
+sensors:
+  - id: "hisas_1032"
+    name: "HISAS 1032 Interferometric SAS"
+    type: "sonar"
+    sub_type: "sas"
+    frequency_khz: [300, 600]
+    swath_m: 300.0
+    resolution_cm: 3.0
+    format: "SAS"
+    lever_arm: [0.8, 0.0, -0.3]
+    status: "active"
+
+  - id: "mbes_hugin"
+    name: "Kongsberg EM2040P MBES"
+    type: "bathymetry"
+    sub_type: "multibeam"
+    frequency_khz: [200, 400]
+    swath_m: 220.0
+    resolution_cm: 8.0
+    format: "GSF"
+    lever_arm: [1.2, 0.0, -0.6]
+    status: "active"
+
+  - id: "flir_m500"
+    name: "FLIR M500 High-Res Optical"
+    type: "optical"
+    sub_type: "rgb_thermal"
+    fov_deg: 90.0
+    fps: 60
+    format: "ROS Image"
+    lever_arm: [2.0, 0.0, -0.3]
+    status: "active"
+
+  - id: "sonardyne_sprint"
+    name: "Sonardyne Sprint INS/USBL"
+    type: "navigation"
+    sub_type: "usbl_ins"
+    accuracy_m: 0.05
+    format: "USBL UDP"
+    status: "active"
+
+  - id: "ctd_hugin"
+    name: "SBE 19plus V2 SeaCAT CTD"
+    type: "oceanographic"
+    sub_type: "ctd"
+    sampling_hz: 4
+    format: "NMEA"
+    status: "active"

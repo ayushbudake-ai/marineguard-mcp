@@ -1,0 +1,44 @@
+compiler:
+  supported_formats:
+    sonar: [XTF, GSF, SAS, SDF]
+    bathymetry: [GSF, HDF5, BAG]
+    optical: [GenICam, ROS Image, MP4]
+    navigation: [ROS NavSatFix, USBL UDP, NMEA]
+  models:
+    side_scan: "models/yolo8_seg_sonar.onnx"
+    sas: "models/yolo8_seg_sas.onnx"
+    optical: "models/rt_detr_optical.onnx"
+    segmentation: "models/sam2_tiny.onnx"
+  fusion:
+    method: "confidence_weighted_late"
+    weights: { sonar: 0.40, optical: 0.35, bathymetry: 0.25 }
+
+firewall:
+  policy: "ICAR-2024"
+  battery_reserve_min: 0.25
+  acoustic_link_min_kbps: 5.0
+  risk_modifiers:
+    battery_below_30: 1
+    comms_below_threshold: 1
+    reserve_consumed_gt_10: 1
+  approval_channels:
+    medium: "single_operator"
+    high: "dual_operator"
+    critical: "supervisor_required"
+
+trace:
+  log_level: "DETAILED"
+  evidence_overlay: true
+  confidence_decomposition: true
+  export_formats: [JSON, HTML, PDF]
+
+exporters:
+  pdf_template: "templates/moes_report.j2"
+  geojson_crs: "EPSG:4326"
+  shapefile_crs: "EPSG:32644"
+  s100_compliance: true
+
+performance:
+  inference_device: "cuda:0"
+  batch_size: 4
+  max_latency_per_ping_ms: 200
