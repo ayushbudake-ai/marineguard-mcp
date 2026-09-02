@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>MarineGuard MCP — Mission Control</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --deep:#020c1b;--mid:#0a1628;--panel:#0f1f3d;--card:#1a2f52;
+      --border:rgba(56,189,248,.18);--cyan:#38bdf8;--teal:#2dd4bf;
+      --green:#4ade80;--amber:#fbbf24;--red:#f87171;--crimson:#dc2626;
+      --txt:#e2e8f0;--muted:#64748b;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--deep);color:var(--txt);overflow-x:hidden}
+
+    /* ═══ TOPBAR ═══ */
+    #topbar{
+      position:fixed;top:0;left:0;right:0;z-index:200;
+      height:54px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 20px;background:rgba(2,12,27,.92);backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--border);
+    }
+    .tb-brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--cyan);font-size:1rem}
+    .sonar-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--cyan);position:relative}
+    .sonar-dot::after{content:'';position:absolute;inset:5px;border-radius:50%;background:var(--cyan)}
+    .sonar-dot::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--cyan);animation:ping 2s ease-out infinite;opacity:0}
+    @keyframes ping{0%{transform:scale(1);opacity:.6}100%{transform:scale(2);opacity:0}}
+    .tb-status{display:flex;align-items:center;gap:18px;font-size:.78rem}
+    .status-pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;border:1px solid}
+    .pill-green{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.08)}
+    .pill-cyan{border-color:var(--cyan);color:var(--cyan);background:rgba(56,189,248,.08)}
+    .pulse{width:7px;height:7px;border-radius:50%;animation:blink 1.2s ease-in-out infinite}
+    .pulse-green{background:var(--green)}
+    .pulse-amber{background:var(--amber)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+    .tb-time{font-family:monospace;color:var(--cyan);font-size:.85rem}
+    .nav-tabs{display:flex;gap:4px}
+    .nav-tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;font-weight:600;transition:.2s}
+    .nav-tab.active,.nav-tab:hover{background:rgba(56,189,248,.12);color:var(--cyan)}
+
+    /* ═══ LAYOUT ═══ */
+    #app{padding-top:54px;min-height:100vh}
+    .page{display:none}
+    .page.active{display:block}
+
+    /* ═══ PAGE: DASHBOARD ═══ */
+    .dashboard-grid{
+      display:grid;
+      grid-template-columns:260px 1fr 280px;
+      grid-template-rows:auto 1fr auto;
+      gap:10px;padding:10px;height:calc(100vh - 54px);
+    }
+    @media(max-width:900px){
+      .dashboard-grid{grid-template-columns:1fr;height:auto}
+      .col-right,.col-left{display:none}
+    }
+
+    /* ═══ PANEL BASE ═══ */
+    .panel{
+      background:var(--panel);border:1px solid var(--border);
+      border-radius:10px;overflow:hidden;display:flex;flex-direction:column;
+    }
+    .panel-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:8px 14px;background:rgba(56,189,248,.05);
+      border-bottom:1px solid var(--border);
+      font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan);
+    }
+    .panel-body{flex:1;overflow:hidden;padding:10px}
+
+    /* ═══ LEFT COL ═══ */
+    .col-left{display:flex;flex-direction:column;gap:10px}
+
+    /* telemetry gauges */
+    .telem-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .gauge-box{
+      background:var(--mid);border:1px solid var(--border);border-radius:8px;
+      padding:10px;text-align:center;
+    }
+    .gauge-val{font-size:1.4rem;font-weight:800;color:var(--cyan);font-family:monospace}
+    .gauge-unit{font-size:.65rem;color:var(--muted);margin-top:2px}
+    .gauge-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:4px}
+    .gauge-bar{height:4px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:6px;overflow:hidden}
+    .gauge-fill{height:100%;border-radius:2px;transition:width .5s ease;background:linear-gradient(90deg,var(--teal),var(--cyan))}
+
+    /* mission status */
+    .mission-status-list{display:flex;flex-direction:column;gap:6px}
+    .ms-item{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;padding:5px 8px;background:var(--mid);border-radius:6px}
+    .ms-key{color:var(--muted)}
+    .ms-val{font-weight:600;font-family:monospace}
+
+    /* risk firewall */
+    .risk-levels{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+    .risk-row-item{
+      display:flex;align-items:center;gap:8px;padding:7px 10px;
+      border-radius:7px;border:1px solid transparent;font-size:.78rem;font-weight:600;
+      transition:all .3s;
+    }
+    .risk-row-item.active-risk{animation:risk-glow .8s ease-in-out infinite alternate}
+    @keyframes risk-glow{from{box-shadow:none}to{box-shadow:0 0 14px var(--glow-color)}}
+    .risk-LOW{border-color:rgba(74,222,128,.3);color:var(--green);background:rgba(74,222,128,.06)}
+    .risk-MEDIUM{border-color:rgba(251,191,36,.3);color:var(--amber);background:rgba(251,191,36,.06)}
+    .risk-HIGH{border-color:rgba(248,113,113,.3);color:var(--red);background:rgba(248,113,113,.06)}
+    .risk-CRITICAL{border-color:rgba(220,38,38,.5);color:#fca5a5;background:rgba(220,38,38,.12)}
+    .risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .risk-dot-LOW{background:var(--green)}
+    .risk-dot-MEDIUM{background:var(--amber)}
+    .risk-dot-HIGH{background:var(--red)}
+    .risk-dot-CRITICAL{background:#dc2626;animation:blink .6s ease-in-out infinite}
+    .risk-count{margin-left:auto;font-size:.7rem;opacity:.7}
+
+    /* ═══ CENTER COL ═══ */
+    .col-center{display:flex;flex-direction:column;gap:10px}
+
+    /* SONAR WATERFALL */
+    #sonarCanvas{width:100%;display:block;image-rendering:pixelated;cursor:crosshair}
+    .sonar-overlay{
+      position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;
+    }
+    .sonar-wrap{position:relative;flex:1;overflow:hidden;background:#000;border-radius:0 0 8px 8px}
+    .sonar-info{
+      position:absolute;top:8px;right:8px;
+      background:rgba(2,12,27,.8);border:1px solid var(--border);
+      border-radius:6px;padding:6px 10px;font-size:.7rem;font-family:monospace;
+      display:flex;flex-direction:column;gap:3px;
+    }
+    .si-row{display:flex;justify-content:space-between;gap:12px}
+    .si-key{color:var(--muted)}
+    .si-val{color:var(--cyan)}
+
+    /* target marker on sonar */
+    .target-marker{
+      position:absolute;width:16px;height:16px;
+      border:2px solid var(--amber);border-radius:50%;transform:translate(-50%,-50%);
+      pointer-events:none;animation:marker-pulse 1.5s ease-out infinite;
+    }
+    @keyframes marker-pulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.6)}100%{box-shadow:0 0 0 14px transparent}}
+
+    /* track map */
+    #trackCanvas{width:100%;height:100%;display:block}
+    .map-wrap{position:relative;height:180px;overflow:hidden}
+
+    /* ═══ RIGHT COL ═══ */
+    .col-right{display:flex;flex-direction:column;gap:10px}
+
+    /* detection cards */
+    .det-feed{display:flex;flex-direction:column;gap:7px;overflow-y:auto;max-height:260px;padding-right:4px}
+    .det-feed::-webkit-scrollbar{width:3px}
+    .det-feed::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    .det-card{
+      background:var(--mid);border:1px solid var(--border);border-radius:8px;
+      padding:10px;transition:.2s;cursor:default;
+    }
+    .det-card:hover{border-color:var(--cyan);transform:translateX(-2px)}
+    .det-card.new-det{animation:slide-in .4s ease}
+    @keyframes slide-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    .det-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .det-id{font-family:monospace;font-size:.72rem;color:var(--teal);font-weight:600}
+    .det-time{font-size:.65rem;color:var(--muted)}
+    .det-sensor{font-size:.7rem;color:var(--muted);margin-bottom:6px}
+    .conf-bar{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;margin-bottom:4px}
+    .conf-fill{height:100%;border-radius:3px;transition:width 1s ease}
+    .conf-high{background:linear-gradient(90deg,var(--green),var(--teal))}
+    .conf-med{background:linear-gradient(90deg,var(--amber),#f97316)}
+    .conf-low{background:var(--red)}
+    .det-footer{display:flex;justify-content:space-between;font-size:.68rem}
+    .risk-badge{padding:2px 7px;border-radius:4px;font-weight:700;font-size:.65rem}
+    .rb-LOW{background:rgba(74,222,128,.15);color:var(--green)}
+    .rb-MEDIUM{background:rgba(251,191,36,.15);color:var(--amber)}
+    .rb-HIGH{background:rgba(248,113,113,.15);color:var(--red)}
+    .rb-CRITICAL{background:rgba(220,38,38,.2);color:#fca5a5}
+    .det-coords{color:var(--muted)}
+
+    /* evidence panel */
+    .evidence-panel{display:flex;flex-direction:column;gap:6px}
+    .ev-img-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .ev-img{
+      border-radius:6px;overflow:hidden;border:1px solid var(--border);
+      position:relative;height:80px;background:#000;display:flex;align-items:center;justify-content:center;
+    }
+    .ev-img canvas{width:100%;height:100%;display:block}
+    .ev-label{position:absolute;bottom:4px;left:6px;font-size:.6rem;color:rgba(255,255,255,.7);font-weight:600;text-shadow:0 1px 3px #000}
+
+    /* log feed */
+    .log-feed{
+      font-family:'Courier New',monospace;font-size:.7rem;
+      background:#000;border-radius:6px;padding:8px;height:130px;overflow-y:auto;
+      display:flex;flex-direction:column;gap:2px;
+    }
+    .log-feed::-webkit-scrollbar{width:3px}
+    .log-feed::-webkit-scrollbar-thumb{background:rgba(56,189,248,.2)}
+    .log-line{display:flex;gap:6px}
+    .log-ts{color:var(--muted);flex-shrink:0}
+    .log-tag{flex-shrink:0;font-weight:700}
+    .log-INFO{color:var(--cyan)}
+    .log-WARN{color:var(--amber)}
+    .log-ALERT{color:var(--red)}
+    .log-OK{color:var(--green)}
+    .log-msg{color:rgba(255,255,255,.7)}
+
+    /* ═══ PAGE: SENSORS ═══ */
+    .sensors-page{padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+    .sensor-card{
+      background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    }
+    .sc-header{
+      padding:12px 16px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:10px;
+    }
+    .sc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+    .sc-name{font-weight:700;font-size:.95rem}
+    .sc-status{font-size:.7rem;margin-top:2px;display:flex;align-items:center;gap:4px}
+    .sc-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+    .sc-stat{display:flex;justify-content:space-between;font-size:.8rem}
+    .sc-stat-key{color:var(--muted)}
+    .sc-stat-val{font-family:monospace;font-weight:600}
+    .sc-wave{height:60px;background:#000;border-radius:6px;overflow:hidden}
+    .sc-wave canvas{width:100%;height:100%;display:block}
+    .sc-mcp{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.15);border-radius:6px;padding:8px;font-size:.72rem}
+    .sc-mcp-label{color:var(--muted);margin-bottom:4px;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em}
+    .sc-mcp-tool{font-family:monospace;color:var(--teal)}
+
+    /* ═══ PAGE: TARGETS ═══ */
+    .targets-page{padding:16px}
+    .targets-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:14px}
+    .target-card{
+      background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    }
+    .tc-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .tc-id{font-family:monospace;font-weight:700;color:var(--cyan)}
+    .tc-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+    .tc-ev-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .tc-ev{border-radius:6px;border:1px solid var(--border);height:70px;background:#000;overflow:hidden;position:relative}
+    .tc-ev canvas{width:100%;height:100%;display:block}
+    .tc-ev-label{position:absolute;bottom:3px;left:5px;font-size:.58rem;color:rgba(255,255,255,.7);font-weight:600}
+    .sensor-conf-list{display:flex;flex-direction:column;gap:5px}
+    .sc-conf-row{display:flex;align-items:center;gap:8px;font-size:.75rem}
+    .sc-conf-name{width:80px;color:var(--muted);flex-shrink:0}
+    .sc-conf-bar{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+    .sc-conf-fill{height:100%;border-radius:3px}
+    .sc-conf-pct{width:36px;text-align:right;font-family:monospace;font-size:.7rem}
+    .fused-conf{
+      display:flex;align-items:center;justify-content:space-between;
+      background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);
+      border-radius:8px;padding:10px 14px;
+    }
+    .fused-label{font-size:.72rem;color:var(--muted)}
+    .fused-val{font-size:1.6rem;font-weight:800;color:var(--cyan);font-family:monospace}
+
+    /* ═══ PAGE: ABOUT ═══ */
+    .about-page{padding:24px;max-width:900px;margin:0 auto}
+    .about-hero{text-align:center;padding:40px 0 30px}
+    .about-hero h1{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,#e2e8f0,var(--cyan),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .about-hero p{color:var(--muted);margin-top:10px;max-width:600px;margin-inline:auto}
+    .about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:24px}
+    .about-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .about-card h3{font-size:.95rem;font-weight:700;margin-bottom:8px;color:var(--cyan)}
+    .about-card p{font-size:.82rem;color:var(--muted);line-height:1.6}
+    .pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .pill{font-size:.7rem;padding:3px 10px;border-radius:999px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);color:var(--cyan);font-weight:600}
+
+    /* ═══ FOOTER BAR ═══ */
+    #footbar{
+      background:rgba(2,12,27,.9);border-top:1px solid var(--border);
+      padding:6px 16px;display:flex;align-items:center;justify-content:space-between;
+      font-size:.7rem;color:var(--muted);position:fixed;bottom:0;left:0;right:0;z-index:100;
+    }
+    #footbar a{color:var(--cyan);text-decoration:none}
+
+    /* scrollbar global */
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-thumb{background:rgba(56,189,248,.2);border-radius:2px}
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="tb-brand">
+    <div class="sonar-dot"></div>
+    MarineGuard MCP
+    <span style="font-weight:400;color:var(--muted);font-size:.75rem">| Mission Control</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">📡 Dashboard</button>
+    <button class="nav-tab" onclick="showPage('sensors')">🔊 Sensors</button>
+    <button class="nav-tab" onclick="showPage('targets')">🎯 Targets</button>
+    <button class="nav-tab" onclick="showPage('about')">ℹ About</button>
+  </div>
+  <div class="tb-status">
+    <span class="status-pill pill-green"><span class="pulse pulse-green"></span>AUV Online</span>
+    <span class="status-pill pill-cyan"><span class="pulse pulse-amber"></span>Mission Active</span>
+    <span class="tb-time" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ═══════════ PAGE: DASHBOARD ═══════════ -->
+  <div class="page active" id="page-dashboard">
+  <div class="dashboard-grid">
+
+    <!-- LEFT COL -->
+    <div class="col-left">
+
+      <!-- Telemetry -->
+      <div class="panel">
+        <div class="panel-header">⚙ AUV Telemetry<span id="depth-badge" style="color:var(--teal)">Sagar Netra</span></div>
+        <div class="panel-body">
+          <div class="telem-grid">
+            <div class="gauge-box">
+              <div class="gauge-val" id="g-depth">48.2</div>
+              <div class="gauge-unit">metres</div>
+              <div class="gauge-label">Depth</div>
+              <div class="gauge-bar"><div class="gauge-fill" id="gf-depth" style="width:48%"></div></div>
+            </div>
+            <div class="gauge-box">
+              <div class="gauge-val" id="g-bat" style="color:var(--green)">74</div>
+              <div class="gauge-unit">%</div>
+              <div class="gauge-label">Battery</div>
+              <div class="gauge-bar"><div class="gauge-fill" id="gf-bat" style="width:74%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div>
+            </div>
+            <div class="gauge-box">
+              <div class="gauge-val" id="g-speed">1.4</div>
+              <div class="gauge-unit">m/s</div>
+              <div class="gauge-label">Speed</div>
+              <div class="gauge-bar"><div class="gauge-fill" id="gf-speed" style="width:56%"></div></div>
+            </div>
+            <div class="gauge-box">
+              <div class="gauge-val" id="g-hdg">247</div>
+              <div class="gauge-unit">°</div>
+              <div class="gauge-label">Heading</div>
+              <div class="gauge-bar"><div class="gauge-fill" id="gf-hdg" style="width:69%"></div></div>
+            </div>
+          </div>
+
+          <div class="mission-status-list" style="margin-top:10px">
+            <div class="ms-item"><span class="ms-key">Platform</span><span class="ms-val" style="color:var(--teal)">Sagar Netra</span></div>
+            <div class="ms-item"><span class="ms-key">Survey Area</span><span class="ms-val">Sector-7W</span></div>
+            <div class="ms-item"><span class="ms-key">Altitude</span><span class="ms-val" id="g-alt">12.3 m</span></div>
+            <div class="ms-item"><span class="ms-key">Comms</span><span class="ms-val" style="color:var(--green)">ACOUSTIC ✓</span></div>
+            <div class="ms-item"><span class="ms-key">Detections</span><span class="ms-val" id="det-count" style="color:var(--amber)">0</span></div>
+            <div class="ms-item"><span class="ms-key">Mission Time</span><span class="ms-val" id="mission-time" style="color:var(--cyan)">00:00:00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Firewall -->
+      <div class="panel">
+        <div class="panel-header">🔥 Mission Firewall<span id="fw-status" style="color:var(--green)">ACTIVE</span></div>
+        <div class="panel-body">
+          <div class="risk-levels">
+            <div class="risk-row-item risk-LOW" id="risk-LOW">
+              <div class="risk-dot risk-dot-LOW"></div>
+              LOW — Continue Survey
+              <span class="risk-count" id="rc-LOW">0</span>
+            </div>
+            <div class="risk-row-item risk-MEDIUM" id="risk-MEDIUM">
+              <div class="risk-dot risk-dot-MEDIUM"></div>
+              MEDIUM — Close Inspect
+              <span class="risk-count" id="rc-MEDIUM">0</span>
+            </div>
+            <div class="risk-row-item risk-HIGH" id="risk-HIGH">
+              <div class="risk-dot risk-dot-HIGH"></div>
+              HIGH — Alert Operator
+              <span class="risk-count" id="rc-HIGH">0</span>
+            </div>
+            <div class="risk-row-item risk-CRITICAL" id="risk-CRITICAL">
+              <div class="risk-dot risk-dot-CRITICAL"></div>
+              CRITICAL — Abort Mission
+              <span class="risk-count" id="rc-CRITICAL">0</span>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:.72rem;color:var(--muted);text-align:center" id="fw-last">No events yet</div>
+        </div>
+      </div>
+
+    </div><!-- /col-left -->
+
+    <!-- CENTER COL -->
+    <div class="col-center">
+
+      <!-- Sonar Waterfall -->
+      <div class="panel" style="flex:2">
+        <div class="panel-header">
+          🔊 Side-Scan Sonar Waterfall — 400 kHz
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:.68rem;color:var(--muted)">Swath: 150m</span>
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1s infinite"></span>
+          </div>
+        </div>
+        <div class="sonar-wrap" style="flex:1;min-height:260px">
+          <canvas id="sonarCanvas"></canvas>
+          <div class="sonar-info">
+            <div class="si-row"><span class="si-key">Range</span><span class="si-val" id="si-range">75 m</span></div>
+            <div class="si-row"><span class="si-key">Freq</span><span class="si-val">400 kHz</span></div>
+            <div class="si-row"><span class="si-key">Ping#</span><span class="si-val" id="si-ping">0</span></div>
+            <div class="si-row"><span class="si-key">Pos</span><span class="si-val" id="si-pos">12.3N 74.5E</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Track Map -->
+      <div class="panel" style="flex:0 0 auto">
+        <div class="panel-header">🗺 Mission Track Plot<span style="color:var(--muted);font-size:.68rem">Sector-7W · Arabian Sea</span></div>
+        <div class="map-wrap"><canvas id="trackCanvas"></canvas></div>
+      </div>
+
+    </div><!-- /col-center -->
+
+    <!-- RIGHT COL -->
+    <div class="col-right">
+
+      <!-- Detection Feed -->
+      <div class="panel" style="flex:0 0 auto">
+        <div class="panel-header">🎯 Detection Feed<span id="det-live" style="color:var(--green);font-size:.68rem">● LIVE</span></div>
+        <div class="panel-body" style="padding:8px">
+          <div class="det-feed" id="detFeed">
+            <div style="color:var(--muted);font-size:.78rem;text-align:center;padding:20px">Scanning… No targets yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evidence Panel -->
+      <div class="panel" style="flex:0 0 auto">
+        <div class="panel-header">🔬 Evidence Overlay<span id="ev-target" style="color:var(--amber);font-size:.68rem">--</span></div>
+        <div class="panel-body" style="padding:8px">
+          <div class="evidence-panel">
+            <div class="ev-img-row">
+              <div class="ev-img"><canvas id="ev-sonar"></canvas><div class="ev-label">SSS Waterfall</div></div>
+              <div class="ev-img"><canvas id="ev-optical"></canvas><div class="ev-label">Optical</div></div>
+              <div class="ev-img"><canvas id="ev-sam"></canvas><div class="ev-label">SAM2 Mask</div></div>
+              <div class="ev-img"><canvas id="ev-bathy"></canvas><div class="ev-label">Bathymetry</div></div>
+            </div>
+            <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:4px" id="ev-desc">Select a target to view evidence</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Log -->
+      <div class="panel" style="flex:1">
+        <div class="panel-header">📋 System Log<button onclick="clearLog()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.65rem">Clear</button></div>
+        <div class="panel-body" style="padding:6px">
+          <div class="log-feed" id="logFeed"></div>
+        </div>
+      </div>
+
+    </div><!-- /col-right -->
+
+  </div>
+  </div><!-- /dashboard -->
+
+  <!-- ═══════════ PAGE: SENSORS ═══════════ -->
+  <div class="page" id="page-sensors">
+  <div class="sensors-page">
+
+    <div class="sensor-card">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(56,189,248,.12)">🔊</div>
+        <div>
+          <div class="sc-name">Side-Scan Sonar</div>
+          <div class="sc-status"><span class="pulse pulse-green"></span><span style="color:var(--green)">Active · 400 kHz</span></div>
+        </div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-stat"><span class="sc-stat-key">Frequency</span><span class="sc-stat-val" style="color:var(--cyan)">400 kHz</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Swath Width</span><span class="sc-stat-val">150 m</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Resolution</span><span class="sc-stat-val">3.5 cm</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Altitude</span><span class="sc-stat-val" id="sss-alt">12.3 m</span></div>
+        <div class="sc-wave"><canvas id="wave-sss"></canvas></div>
+        <div class="sc-mcp">
+          <div class="sc-mcp-label">Compiled MCP Tool</div>
+          <div class="sc-mcp-tool">start_side_scan_survey(freq=400, swath=150)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sensor-card">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(45,212,191,.12)">🗺</div>
+        <div>
+          <div class="sc-name">MBES Bathymetry</div>
+          <div class="sc-status"><span class="pulse pulse-green"></span><span style="color:var(--green)">Active · EM2040</span></div>
+        </div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-stat"><span class="sc-stat-key">Swath Angle</span><span class="sc-stat-val" style="color:var(--teal)">130°</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Beams</span><span class="sc-stat-val">512</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Depth Range</span><span class="sc-stat-val">5 – 300 m</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Current Depth</span><span class="sc-stat-val" id="mbes-depth">48.2 m</span></div>
+        <div class="sc-wave"><canvas id="wave-mbes"></canvas></div>
+        <div class="sc-mcp">
+          <div class="sc-mcp-label">Compiled MCP Tool</div>
+          <div class="sc-mcp-tool">start_bathymetry_mapping(swath_m=250)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sensor-card">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(251,191,36,.12)">📷</div>
+        <div>
+          <div class="sc-name">4K Stereo Optical</div>
+          <div class="sc-status"><span class="pulse pulse-green"></span><span style="color:var(--green)">Active · 4K@30fps</span></div>
+        </div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-stat"><span class="sc-stat-key">Resolution</span><span class="sc-stat-val" style="color:var(--amber)">3840×2160</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">FPS</span><span class="sc-stat-val">30</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">FOV</span><span class="sc-stat-val">82°</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Baseline</span><span class="sc-stat-val">18 cm</span></div>
+        <div class="sc-wave"><canvas id="wave-opt"></canvas></div>
+        <div class="sc-mcp">
+          <div class="sc-mcp-label">Compiled MCP Tool</div>
+          <div class="sc-mcp-tool">detect_debris_optical(fov_deg=82, fps=30)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sensor-card">
+      <div class="sc-header">
+        <div class="sc-icon" style="background:rgba(248,113,113,.12)">📡</div>
+        <div>
+          <div class="sc-name">CTD Sensor</div>
+          <div class="sc-status"><span class="pulse pulse-green"></span><span style="color:var(--green)">Active · Sampling</span></div>
+        </div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-stat"><span class="sc-stat-key">Conductivity</span><span class="sc-stat-val" style="color:var(--red)" id="ctd-c">38.2 mS/cm</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Temperature</span><span class="sc-stat-val" id="ctd-t">26.4 °C</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Pressure</span><span class="sc-stat-val" id="ctd-p">5.0 dbar</span></div>
+        <div class="sc-stat"><span class="sc-stat-key">Salinity</span><span class="sc-stat-val">34.7 PSU</span></div>
+        <div class="sc-wave"><canvas id="wave-ctd"></canvas></div>
+        <div class="sc-mcp">
+          <div class="sc-mcp-label">Sensor File</div>
+          <div class="sc-mcp-tool">data/sensor_specs/sagar_netra.yaml</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- ═══════════ PAGE: TARGETS ═══════════ -->
+  <div class="page" id="page-targets">
+  <div class="targets-page">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-size:1.1rem;font-weight:700">🎯 Classified Targets</h2>
+      <span id="target-count" style="color:var(--muted);font-size:.8rem">Loading…</span>
+    </div>
+    <div class="targets-grid" id="targetsGrid">
+      <div style="color:var(--muted);padding:40px;text-align:center;grid-column:1/-1">Waiting for detections…</div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══════════ PAGE: ABOUT ═══════════ -->
+  <div class="page" id="page-about">
+  <div class="about-page">
+    <div class="about-hero">
+      <h1>🌊 MarineGuard MCP</h1>
+      <p>Autonomous AI-powered underwater marine debris & anomaly detection system built for SIH26057 — Ministry of Earth Sciences.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap">
+        <a href="https://github.com/ayushbudake-ai/marineguard-mcp" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(56,189,248,.1);border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);text-decoration:none;font-weight:700;font-size:.85rem">⭐ GitHub Repo</a>
+        <a href="https://ayushbudake-ai.github.io/marineguard-mcp/" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:rgba(45,212,191,.1);border:1px solid var(--teal);border-radius:8px;color:var(--teal);text-decoration:none;font-weight:700;font-size:.85rem">🌐 Landing Page</a>
+      </div>
+    </div>
+    <div class="about-grid">
+      <div class="about-card">
+        <h3>🔧 Sensor Suite Compiler</h3>
+        <p>Parses AUV/ROV YAML spec files and automatically emits executable MCP tool stubs. No per-platform manual coding needed.</p>
+        <div class="pill-row"><span class="pill">sensor_parser.py</span><span class="pill">mcp_emitter.py</span><span class="pill">YAML → MCP</span></div>
+      </div>
+      <div class="about-card">
+        <h3>🔍 Detection & Fusion</h3>
+        <p>Multi-modal target detection across SSS, SAS, optical, and bathymetry with Dempster-Shafer evidence combination.</p>
+        <div class="pill-row"><span class="pill">side_scan.py</span><span class="pill">fusion.py</span><span class="pill">D-S Theory</span></div>
+      </div>
+      <div class="about-card">
+        <h3>🔥 Mission Firewall</h3>
+        <p>Formal risk taxonomy enforcement. Every vehicle action is gated against battery reserve, comms link, and detection confidence.</p>
+        <div class="pill-row"><span class="pill">LOW</span><span class="pill">MEDIUM</span><span class="pill">HIGH</span><span class="pill">CRITICAL</span></div>
+      </div>
+      <div class="about-card">
+        <h3>📋 Explainable Trace</h3>
+        <p>Step-by-step JSON decision logs and multi-modal visual evidence overlays for every classified target.</p>
+        <div class="pill-row"><span class="pill">tracer.py</span><span class="pill">evidence_overlay.py</span></div>
+      </div>
+      <div class="about-card">
+        <h3>🤖 MCP Tools (9)</h3>
+        <p>Full list of dynamically compiled tools exposed to any MCP-compatible LLM agent.</p>
+        <div class="pill-row" style="gap:4px">
+          <span class="pill" style="font-size:.62rem">marine_debris_survey</span>
+          <span class="pill" style="font-size:.62rem">detect_debris_sonar</span>
+          <span class="pill" style="font-size:.62rem">classify_target</span>
+          <span class="pill" style="font-size:.62rem">export_report</span>
+        </div>
+      </div>
+      <div class="about-card">
+        <h3>📤 Exporters</h3>
+        <p>Standards-compliant output: ReportLab PDF, GeoJSON FeatureCollection, and IHO S-100 hydrographic XML.</p>
+        <div class="pill-row"><span class="pill">PDF</span><span class="pill">GeoJSON</span><span class="pill">S-100 XML</span></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- FOOTER -->
+<div id="footbar">
+  <span>MarineGuard MCP · SIH26057 · Ministry of Earth Sciences</span>
+  <span>
+    <a href="https://github.com/ayushbudake-ai/marineguard-mcp" target="_blank">GitHub</a> ·
+    <a href="https://ayushbudake-ai.github.io/marineguard-mcp/" target="_blank">Landing Page</a> ·
+    <a href="https://marineguard-mcp.streamlit.app" target="_blank">Streamlit App</a>
+  </span>
+  <span id="fpsCounter" style="color:var(--teal)">Sim running</span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   MARINGUARD MCP — MISSION CONTROL FRONTEND
+   Pure JS simulation — no backend needed
+═══════════════════════════════════════════════════ */
+
+// ── STATE ──
+const state = {
+  ping: 0, detCount: 0, missionSecs: 0,
+  depth: 48.2, battery: 74, speed: 1.4, heading: 247, altitude: 12.3,
+  riskCounts: {LOW:0,MEDIUM:0,HIGH:0,CRITICAL:0},
+  detections: [], activeEv: null,
+  lat: 12.3, lon: 74.5,
+  trackPoints: [], sonarRows: [],
+  lastDet: 0,
+};
+
+// ── PAGE SWITCHER ──
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if(name==='sensors') initSensorWaves();
+  if(name==='targets') renderTargets();
+}
+
+// ── CLOCK ──
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toTimeString().slice(0,8)+' IST';
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── MISSION TIMER ──
+setInterval(()=>{
+  state.missionSecs++;
+  const h=String(Math.floor(state.missionSecs/3600)).padStart(2,'0');
+  const m=String(Math.floor((state.missionSecs%3600)/60)).padStart(2,'0');
+  const s=String(state.missionSecs%60).padStart(2,'0');
+  document.getElementById('mission-time').textContent=`${h}:${m}:${s}`;
+},1000);
+
+// ── TELEMETRY SIMULATION ──
+function simTelemetry(){
+  state.depth    += (Math.random()-.5)*0.8;
+  state.depth     = Math.max(30,Math.min(80,state.depth));
+  state.battery  -= 0.004;
+  state.speed    += (Math.random()-.5)*0.05;
+  state.speed     = Math.max(0.8,Math.min(2.2,state.speed));
+  state.heading  += (Math.random()-.5)*1.5;
+  state.heading   = ((state.heading%360)+360)%360;
+  state.altitude += (Math.random()-.5)*0.3;
+  state.altitude  = Math.max(8,Math.min(20,state.altitude));
+  state.lat      += 0.00002 + (Math.random()-.5)*0.000005;
+  state.lon      += 0.000015 + (Math.random()-.5)*0.000005;
+
+  document.getElementById('g-depth').textContent  = state.depth.toFixed(1);
+  document.getElementById('g-bat').textContent     = Math.max(0,state.battery).toFixed(0);
+  document.getElementById('g-speed').textContent  = state.speed.toFixed(1);
+  document.getElementById('g-hdg').textContent    = Math.round(state.heading);
+  document.getElementById('g-alt').textContent    = state.altitude.toFixed(1)+' m';
+  document.getElementById('gf-depth').style.width = (state.depth/100*100)+'%';
+  document.getElementById('gf-bat').style.width   = state.battery+'%';
+  document.getElementById('gf-speed').style.width = (state.speed/2.5*100)+'%';
+  document.getElementById('gf-hdg').style.width   = (state.heading/360*100)+'%';
+  document.getElementById('si-pos').textContent   = state.lat.toFixed(4)+'N '+state.lon.toFixed(4)+'E';
+
+  const batEl = document.getElementById('g-bat');
+  batEl.style.color = state.battery>50?'var(--green)':state.battery>25?'var(--amber)':'var(--red)';
+
+  // CTD
+  if(document.getElementById('ctd-t')){
+    document.getElementById('ctd-c').textContent=(38.2+(Math.random()-.5)*.2).toFixed(1)+' mS/cm';
+    document.getElementById('ctd-t').textContent=(26.4+(Math.random()-.5)*.1).toFixed(1)+' °C';
+    document.getElementById('ctd-p').textContent=(state.depth/10).toFixed(1)+' dbar';
+  }
+  if(document.getElementById('sss-alt'))
+    document.getElementById('sss-alt').textContent=state.altitude.toFixed(1)+' m';
+  if(document.getElementById('mbes-depth'))
+    document.getElementById('mbes-depth').textContent=state.depth.toFixed(1)+' m';
+
+  // track
+  state.trackPoints.push({x:state.lon,y:state.lat});
+  if(state.trackPoints.length>400) state.trackPoints.shift();
+  drawTrack();
+}
+setInterval(simTelemetry,500);
+
+// ── SONAR WATERFALL ──
+const sonarCanvas = document.getElementById('sonarCanvas');
+const sonarCtx = sonarCanvas.getContext('2d');
+let sonarW=0,sonarH=0,sonarImg=null;
+
+function resizeSonar(){
+  const wrap = sonarCanvas.parentElement;
+  sonarW = wrap.clientWidth;
+  sonarH = wrap.clientHeight;
+  sonarCanvas.width = sonarW;
+  sonarCanvas.height = sonarH;
+}
+
+function generateSonarRow(hasTarget, targetX){
+  const row = new Uint8ClampedArray(sonarW*4);
+  for(let x=0;x<sonarW;x++){
+    const center = sonarW/2;
+    const dist = Math.abs(x-center)/center;
+    let intensity = Math.random()*40 + 10;
+    // seafloor returns
+    if(dist>0.85) intensity = 120+Math.random()*80;
+    // nadir shadow
+    if(dist<0.03) intensity = 5;
+    // specular highlights
+    if(Math.random()<0.003) intensity = 200+Math.random()*55;
+    // target
+    if(hasTarget){
+      const tx = Math.floor(targetX*sonarW);
+      const shadow_start = tx+2, shadow_end = tx+Math.floor(8+Math.random()*6);
+      if(x>=tx-2 && x<=tx+2) intensity=220+Math.random()*35; // bright highlight
+      if(x>shadow_start && x<shadow_end) intensity=Math.max(2,intensity-intensity*0.85); // shadow
+    }
+    const v = Math.floor(Math.min(255,intensity));
+    // teal tint
+    row[x*4]   = Math.floor(v*0.1);
+    row[x*4+1] = Math.floor(v*0.7);
+    row[x*4+2] = Math.floor(v*0.9);
+    row[x*4+3] = 255;
+  }
+  return row;
+}
+
+let sonarLines = [];
+let sonarTargetPending = false;
+let sonarTargetX = 0.3;
+let sonarTargetRow = 0;
+let PING = 0;
+
+function drawSonar(){
+  if(!sonarW||!sonarH){resizeSonar();return;}
+  PING++;
+  state.ping = PING;
+  document.getElementById('si-ping').textContent = PING;
+
+  const hasT = sonarTargetPending && sonarLines.length>0 && (sonarLines.length - sonarTargetRow) < 20 && (sonarLines.length - sonarTargetRow) > 0;
+  const row = generateSonarRow(hasT, sonarTargetX);
+  sonarLines.push(row);
+  if(sonarLines.length > sonarH) sonarLines.shift();
+
+  const imgData = sonarCtx.createImageData(sonarW, sonarH);
+  const startIdx = Math.max(0, sonarLines.length - sonarH);
+  for(let y=0;y<sonarH;y++){
+    const rowIdx = startIdx + y;
+    if(rowIdx < sonarLines.length){
+      const srcRow = sonarLines[rowIdx];
+      for(let x=0;x<sonarW;x++){
+        const di=(y*sonarW+x)*4, si=x*4;
+        imgData.data[di]=srcRow[si]; imgData.data[di+1]=srcRow[si+1];
+        imgData.data[di+2]=srcRow[si+2]; imgData.data[di+3]=255;
+      }
+    }
+  }
+  sonarCtx.putImageData(imgData,0,0);
+
+  // scan line
+  sonarCtx.fillStyle='rgba(56,189,248,0.4)';
+  sonarCtx.fillRect(0,sonarH-2,sonarW,2);
+
+  // center nadir
+  sonarCtx.strokeStyle='rgba(56,189,248,0.15)';
+  sonarCtx.beginPath(); sonarCtx.moveTo(sonarW/2,0); sonarCtx.lineTo(sonarW/2,sonarH); sonarCtx.stroke();
+
+  // target marker on sonar
+  if(hasT){
+    const tx = sonarTargetX*sonarW;
+    const ty = sonarH - (sonarLines.length - sonarTargetRow) - 1;
+    sonarCtx.strokeStyle='rgba(251,191,36,.9)';
+    sonarCtx.lineWidth=1.5;
+    sonarCtx.beginPath(); sonarCtx.arc(tx,ty,6,0,Math.PI*2); sonarCtx.stroke();
+    sonarCtx.strokeStyle='rgba(251,191,36,.4)';
+    sonarCtx.beginPath(); sonarCtx.arc(tx,ty,10,0,Math.PI*2); sonarCtx.stroke();
+  }
+}
+
+// ── TRACK MAP ──
+const trackCanvas = document.getElementById('trackCanvas');
+const trackCtx = trackCanvas.getContext('2d');
+
+function drawTrack(){
+  const w = trackCanvas.parentElement.clientWidth;
+  const h = trackCanvas.parentElement.clientHeight;
+  trackCanvas.width=w; trackCanvas.height=h;
+  const pts = state.trackPoints;
+  if(pts.length<2) return;
+
+  // background grid
+  trackCtx.fillStyle='#000';
+  trackCtx.fillRect(0,0,w,h);
+  trackCtx.strokeStyle='rgba(56,189,248,0.05)';
+  for(let i=0;i<w;i+=30){trackCtx.beginPath();trackCtx.moveTo(i,0);trackCtx.lineTo(i,h);trackCtx.stroke();}
+  for(let i=0;i<h;i+=30){trackCtx.beginPath();trackCtx.moveTo(0,i);trackCtx.lineTo(w,i);trackCtx.stroke();}
+
+  const minX=Math.min(...pts.map(p=>p.x)), maxX=Math.max(...pts.map(p=>p.x));
+  const minY=Math.min(...pts.map(p=>p.y)), maxY=Math.max(...pts.map(p=>p.y));
+  const rx=maxX-minX||0.001, ry=maxY-minY||0.001;
+  const pad=20;
+  const toX=p=>pad+(p.x-minX)/rx*(w-pad*2);
+  const toY=p=>h-pad-(p.y-minY)/ry*(h-pad*2);
+
+  // track gradient
+  for(let i=1;i<pts.length;i++){
+    const t=i/pts.length;
+    trackCtx.strokeStyle=`rgba(${Math.floor(56+t*100)},${Math.floor(189-t*50)},248,${0.3+t*0.6})`;
+    trackCtx.lineWidth=1.5;
+    trackCtx.beginPath();
+    trackCtx.moveTo(toX(pts[i-1]),toY(pts[i-1]));
+    trackCtx.lineTo(toX(pts[i]),toY(pts[i]));
+    trackCtx.stroke();
+  }
+
+  // detection dots
+  state.detections.forEach(d=>{
+    if(!d.trackPt) return;
+    const col=d.risk==='CRITICAL'?'#dc2626':d.risk==='HIGH'?'var(--red)':d.risk==='MEDIUM'?'var(--amber)':'var(--green)';
+    trackCtx.fillStyle=col;
+    trackCtx.beginPath();
+    trackCtx.arc(toX(d.trackPt),toY(d.trackPt),4,0,Math.PI*2);
+    trackCtx.fill();
+  });
+
+  // AUV position
+  const last=pts[pts.length-1];
+  trackCtx.fillStyle='var(--cyan)';
+  trackCtx.beginPath(); trackCtx.arc(toX(last),toY(last),6,0,Math.PI*2); trackCtx.fill();
+  trackCtx.strokeStyle='rgba(56,189,248,0.4)';
+  trackCtx.lineWidth=1;
+  trackCtx.beginPath(); trackCtx.arc(toX(last),toY(last),10,0,Math.PI*2); trackCtx.stroke();
+
+  // legend
+  trackCtx.fillStyle='rgba(56,189,248,.8)'; trackCtx.font='10px monospace';
+  trackCtx.fillText(`Track: ${pts.length} pts`,6,14);
+  trackCtx.fillStyle='rgba(148,163,184,.6)';
+  trackCtx.fillText(`${state.lat.toFixed(4)}N ${state.lon.toFixed(4)}E`,6,h-6);
+}
+
+// ── DETECTION GENERATOR ──
+const DEBRIS_TYPES = ['Fishing Net Fragment','Plastic Container','Metal Drum','Rope Bundle','Unknown Object','Anchor Chain','Trawl Door','Derelict Trap'];
+const SENSORS = ['SSS+Optical','SSS+Bathy','SAS+Optical','SSS+SAS+Optical'];
+
+function generateDetection(){
+  const conf = 0.45 + Math.random()*0.52;
+  const risk = conf>0.88?'CRITICAL':conf>0.72?'HIGH':conf>0.52?'MEDIUM':'LOW';
+  const type = DEBRIS_TYPES[Math.floor(Math.random()*DEBRIS_TYPES.length)];
+  const sensor = SENSORS[Math.floor(Math.random()*SENSORS.length)];
+  state.detCount++;
+  state.riskCounts[risk]++;
+
+  const det = {
+    id:`TGT-${String(state.detCount).padStart(3,'0')}`,
+    type, conf, risk, sensor,
+    lat: state.lat.toFixed(4), lon: state.lon.toFixed(4),
+    depth: state.depth.toFixed(1),
+    time: new Date().toTimeString().slice(0,8),
+    trackPt:{x:state.lon,y:state.lat},
+    sensorConfs:{
+      'Side-Scan': (conf*0.85 + Math.random()*0.15).toFixed(2),
+      'Optical':   (conf*0.78 + Math.random()*0.15).toFixed(2),
+      'Bathymetry':(conf*0.60 + Math.random()*0.15).toFixed(2),
+    }
+  };
+  state.detections.push(det);
+
+  // sonar target
+  sonarTargetPending = true;
+  sonarTargetX = 0.25 + Math.random()*0.5;
+  sonarTargetRow = sonarLines.length + 5;
+
+  addDetCard(det);
+  updateRiskUI(det);
+  addLog(risk==='CRITICAL'||risk==='HIGH'?'ALERT':risk==='MEDIUM'?'WARN':'OK',
+    `${det.id} detected — ${type} | conf=${(conf*100).toFixed(0)}% | ${risk}`);
+  document.getElementById('det-count').textContent = state.detCount;
+  document.getElementById('det-count').style.color = state.detCount>5?'var(--red)':'var(--amber)';
+  if(state.activeEv===null) showEvidence(det);
+
+  // targets page
+  if(document.getElementById('page-targets').classList.contains('active')) renderTargets();
+}
+
+function addDetCard(d){
+  const feed = document.getElementById('detFeed');
+  const first = feed.querySelector('[data-empty]');
+  if(first) first.remove();
+
+  const confClass = d.conf>0.75?'conf-high':d.conf>0.5?'conf-med':'conf-low';
+  const div = document.createElement('div');
+  div.className='det-card new-det';
+  div.innerHTML=`
+    <div class="det-top">
+      <span class="det-id">${d.id}</span>
+      <span class="det-time">${d.time}</span>
+    </div>
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:4px">${d.type}</div>
+    <div class="det-sensor">Sensors: ${d.sensor}</div>
+    <div class="conf-bar"><div class="conf-fill ${confClass}" style="width:${(d.conf*100).toFixed(0)}%"></div></div>
+    <div class="det-footer">
+      <span class="risk-badge rb-${d.risk}">${d.risk}</span>
+      <span class="det-coords">${d.conf*100|0}% · ${d.lat}N ${d.lon}E</span>
+    </div>`;
+  div.onclick=()=>showEvidence(d);
+  feed.prepend(div);
+  if(feed.children.length>8) feed.lastChild.remove();
+}
+
+function updateRiskUI(d){
+  ['LOW','MEDIUM','HIGH','CRITICAL'].forEach(r=>{
+    document.getElementById('rc-'+r).textContent=state.riskCounts[r];
+    const el=document.getElementById('risk-'+r);
+    el.classList.remove('active-risk');
+  });
+  const el=document.getElementById('risk-'+d.risk);
+  el.classList.add('active-risk');
+  el.style.setProperty('--glow-color',d.risk==='CRITICAL'?'rgba(220,38,38,.5)':d.risk==='HIGH'?'rgba(248,113,113,.3)':d.risk==='MEDIUM'?'rgba(251,191,36,.3)':'rgba(74,222,128,.3)');
+  document.getElementById('fw-last').textContent=`Last: ${d.id} → ${d.risk} at ${d.time}`;
+  if(d.risk==='CRITICAL'){
+    addLog('ALERT','⚠ FIREWALL: CRITICAL — Emergency ascent protocol activated!');
+    document.getElementById('fw-status').textContent='⚠ TRIGGERED';
+    document.getElementById('fw-status').style.color='var(--red)';
+    setTimeout(()=>{
+      document.getElementById('fw-status').textContent='ACTIVE';
+      document.getElementById('fw-status').style.color='var(--green)';
+    },4000);
+  }
+}
+
+// ── EVIDENCE PANELS ──
+function drawEvSonar(canvas, hasTarget){
+  const w=canvas.parentElement.clientWidth||120, h=canvas.parentElement.clientHeight||80;
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const v=Math.random()*60+10;
+      const bv=Math.floor(Math.min(255,v));
+      ctx.fillStyle=`rgb(${Math.floor(bv*0.1)},${Math.floor(bv*0.7)},${Math.floor(bv*0.9)})`;
+      ctx.fillRect(x,y,1,1);
+    }
+  }
+  if(hasTarget){
+    const tx=w*0.45, ty=h*0.55;
+    ctx.fillStyle='rgba(255,220,50,0.9)';
+    ctx.fillRect(tx-3,ty-8,6,8);
+    ctx.fillStyle='rgba(0,0,0,0.85)';
+    ctx.fillRect(tx+3,ty-5,12,5);
+    ctx.strokeStyle='rgba(251,191,36,.8)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(tx-4,ty-9,8,10);
+  }
+}
+
+function drawEvOptical(canvas){
+  const w=canvas.parentElement.clientWidth||120, h=canvas.parentElement.clientHeight||80;
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  // ocean floor gradient
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,'#0a2540'); g.addColorStop(1,'#062010');
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  // sand ripples
+  ctx.strokeStyle='rgba(180,150,80,0.2)'; ctx.lineWidth=1;
+  for(let i=0;i<h;i+=6){ ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i+(Math.random()-.5)*4); ctx.stroke(); }
+  // debris
+  ctx.fillStyle='rgba(200,180,100,0.7)';
+  ctx.beginPath(); ctx.ellipse(w*0.45,h*0.55,w*0.08,h*0.06,0.3,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(251,191,36,0.9)'; ctx.lineWidth=1.5;
+  ctx.strokeRect(w*0.32,h*0.42,w*0.26,h*0.26);
+  ctx.fillStyle='rgba(251,191,36,0.8)'; ctx.font=`${Math.max(7,w*0.08)}px monospace`;
+  ctx.fillText('TGT',w*0.33,h*0.38);
+}
+
+function drawEvSAM(canvas){
+  const w=canvas.parentElement.clientWidth||120, h=canvas.parentElement.clientHeight||80;
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(56,189,248,0.25)';
+  ctx.beginPath(); ctx.ellipse(w*0.45,h*0.55,w*0.12,h*0.1,0.3,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(56,189,248,0.9)'; ctx.lineWidth=1.5;
+  ctx.stroke();
+  // mask pixels
+  for(let i=0;i<200;i++){
+    const px=w*0.33+Math.random()*w*0.24, py=h*0.44+Math.random()*h*0.22;
+    ctx.fillStyle=`rgba(56,189,248,${0.4+Math.random()*0.5})`;
+    ctx.fillRect(px,py,1.5,1.5);
+  }
+}
+
+function drawEvBathy(canvas){
+  const w=canvas.parentElement.clientWidth||120, h=canvas.parentElement.clientHeight||80;
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(45,212,191,0.8)'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  const pts=[];
+  for(let x=0;x<=w;x+=2){
+    let y=h*0.6+Math.sin(x*0.1)*h*0.05+(Math.random()-.5)*h*0.03;
+    if(x>w*0.35&&x<w*0.55) y-=h*0.25+Math.sin((x-w*0.35)/(w*0.2)*Math.PI)*h*0.15;
+    pts.push({x,y});
+    if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  // fill under curve
+  ctx.fillStyle='rgba(45,212,191,0.08)';
+  ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath(); ctx.fill();
+  // anomaly marker
+  ctx.strokeStyle='rgba(251,191,36,0.8)'; ctx.lineWidth=1;
+  ctx.setLineDash([2,2]);
+  ctx.beginPath(); ctx.moveTo(w*0.45,0); ctx.lineTo(w*0.45,h); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function showEvidence(d){
+  state.activeEv=d;
+  document.getElementById('ev-target').textContent=d.id+' — '+d.type;
+  drawEvSonar(document.getElementById('ev-sonar'),true);
+  drawEvOptical(document.getElementById('ev-optical'));
+  drawEvSAM(document.getElementById('ev-sam'));
+  drawEvBathy(document.getElementById('ev-bathy'));
+  document.getElementById('ev-desc').textContent=
+    `Fused conf: ${(d.conf*100).toFixed(0)}% · Risk: ${d.risk} · ${d.depth}m depth`;
+}
+
+// ── TARGETS PAGE ──
+function renderTargets(){
+  const grid=document.getElementById('targetsGrid');
+  const cnt=document.getElementById('target-count');
+  if(!state.detections.length){
+    grid.innerHTML='<div style="color:var(--muted);padding:40px;text-align:center;grid-column:1/-1">Waiting for detections…</div>';
+    cnt.textContent='No targets yet'; return;
+  }
+  cnt.textContent=`${state.detections.length} targets classified`;
+  grid.innerHTML='';
+  [...state.detections].reverse().forEach(d=>{
+    const tc=document.createElement('div');
+    tc.className='target-card';
+    tc.innerHTML=`
+      <div class="tc-head">
+        <span class="tc-id">${d.id}</span>
+        <span class="risk-badge rb-${d.risk}">${d.risk}</span>
+      </div>
+      <div class="tc-body">
+        <div style="font-weight:700">${d.type}</div>
+        <div class="tc-ev-row">
+          <div class="tc-ev"><canvas id="tc-ev-s-${d.id}"></canvas><div class="tc-ev-label">SSS</div></div>
+          <div class="tc-ev"><canvas id="tc-ev-o-${d.id}"></canvas><div class="tc-ev-label">Optical</div></div>
+          <div class="tc-ev"><canvas id="tc-ev-m-${d.id}"></canvas><div class="tc-ev-label">SAM2</div></div>
+          <div class="tc-ev"><canvas id="tc-ev-b-${d.id}"></canvas><div class="tc-ev-label">Bathy</div></div>
+        </div>
+        <div class="sensor-conf-list">
+          <div class="sc-conf-row">
+            <span class="sc-conf-name">Side-Scan</span>
+            <div class="sc-conf-bar"><div class="sc-conf-fill" style="width:${d.sensorConfs['Side-Scan']*100}%;background:var(--cyan)"></div></div>
+            <span class="sc-conf-pct" style="color:var(--cyan)">${(d.sensorConfs['Side-Scan']*100).toFixed(0)}%</span>
+          </div>
+          <div class="sc-conf-row">
+            <span class="sc-conf-name">Optical</span>
+            <div class="sc-conf-bar"><div class="sc-conf-fill" style="width:${d.sensorConfs['Optical']*100}%;background:var(--amber)"></div></div>
+            <span class="sc-conf-pct" style="color:var(--amber)">${(d.sensorConfs['Optical']*100).toFixed(0)}%</span>
+          </div>
+          <div class="sc-conf-row">
+            <span class="sc-conf-name">Bathymetry</span>
+            <div class="sc-conf-bar"><div class="sc-conf-fill" style="width:${d.sensorConfs['Bathymetry']*100}%;background:var(--teal)"></div></div>
+            <span class="sc-conf-pct" style="color:var(--teal)">${(d.sensorConfs['Bathymetry']*100).toFixed(0)}%</span>
+          </div>
+        </div>
+        <div class="fused-conf">
+          <div><div class="fused-label">Fused Confidence</div><div style="font-size:.7rem;color:var(--muted)">Dempster-Shafer</div></div>
+          <div class="fused-val">${(d.conf*100).toFixed(1)}%</div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);display:flex;justify-content:space-between">
+          <span>📍 ${d.lat}N ${d.lon}E</span>
+          <span>🌊 ${d.depth} m</span>
+          <span>⏱ ${d.time}</span>
+        </div>
+      </div>`;
+    grid.appendChild(tc);
+    setTimeout(()=>{
+      const ss=document.getElementById(`tc-ev-s-${d.id}`);
+      const so=document.getElementById(`tc-ev-o-${d.id}`);
+      const sm=document.getElementById(`tc-ev-m-${d.id}`);
+      const sb=document.getElementById(`tc-ev-b-${d.id}`);
+      if(ss){drawEvSonar(ss,true);drawEvOptical(so);drawEvSAM(sm);drawEvBathy(sb);}
+    },50);
+  });
+}
+
+// ── SENSOR WAVE ANIMATIONS ──
+const waveCanvases={};
+function initSensorWaves(){
+  ['sss','mbes','opt','ctd'].forEach(id=>{
+    const c=document.getElementById('wave-'+id);
+    if(!c) return;
+    const w=c.parentElement.clientWidth||200, h=60;
+    c.width=w; c.height=h;
+    if(!waveCanvases[id]) waveCanvases[id]={phase:0,data:[]};
+  });
+}
+
+function drawSensorWaves(){
+  const configs={
+    sss:{color:'rgba(56,189,248,0.8)',freq:3,amp:18,noise:5},
+    mbes:{color:'rgba(45,212,191,0.8)',freq:1.5,amp:14,noise:3},
+    opt:{color:'rgba(251,191,36,0.8)',freq:5,amp:10,noise:8},
+    ctd:{color:'rgba(248,113,113,0.8)',freq:0.8,amp:12,noise:2},
+  };
+  Object.entries(configs).forEach(([id,cfg])=>{
+    const c=document.getElementById('wave-'+id);
+    if(!c||!c.width) return;
+    const ctx=c.getContext('2d');
+    const w=c.width, h=c.height;
+    if(!waveCanvases[id]) waveCanvases[id]={phase:0};
+    waveCanvases[id].phase+=0.08;
+    const ph=waveCanvases[id].phase;
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle=cfg.color; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let x=0;x<=w;x++){
+      const y=h/2+Math.sin(x*cfg.freq/w*Math.PI*2+ph)*cfg.amp+(Math.random()-.5)*cfg.noise;
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.strokeStyle=cfg.color.replace('0.8','0.2');
+    ctx.lineWidth=4;
+    ctx.stroke();
+  });
+}
+
+// ── LOG ──
+function addLog(tag,msg){
+  const feed=document.getElementById('logFeed');
+  const now=new Date().toTimeString().slice(0,8);
+  const line=document.createElement('div');
+  line.className='log-line';
+  line.innerHTML=`<span class="log-ts">${now}</span><span class="log-tag log-${tag}">[${tag}]</span><span class="log-msg">${msg}</span>`;
+  feed.appendChild(line);
+  feed.scrollTop=feed.scrollHeight;
+  if(feed.children.length>60) feed.firstChild.remove();
+}
+
+function clearLog(){document.getElementById('logFeed').innerHTML='';}
+
+// ── DETECTION SCHEDULER ──
+function scheduleDetection(){
+  const delay=8000+Math.random()*12000;
+  setTimeout(()=>{generateDetection();scheduleDetection();},delay);
+}
+
+// ── MAIN LOOP ──
+let animFrame=0;
+function mainLoop(){
+  resizeSonar();
+  drawSonar();
+  drawSensorWaves();
+  animFrame++;
+  if(animFrame%3===0) document.getElementById('fpsCounter').textContent=`Sim · ${Math.round(animFrame/((Date.now()-startTime)/1000))} fps`;
+  requestAnimationFrame(mainLoop);
+}
+
+// ── BOOT ──
+const startTime=Date.now();
+window.addEventListener('load',()=>{
+  resizeSonar();
+  addLog('INFO','MarineGuard MCP v1.0 — System online');
+  addLog('INFO','Platform: Sagar Netra (AUV-01) · Sector-7W · Arabian Sea');
+  addLog('OK','All 6 sensors initialized and streaming');
+  addLog('OK','MCP Tool Server: 9 tools compiled and registered');
+  addLog('INFO','Mission Firewall: ACTIVE — thresholds loaded');
+  addLog('INFO','Sonar waterfall streaming at 400 kHz / 150m swath');
+  scheduleDetection();
+  mainLoop();
+  // initial track point
+  state.trackPoints.push({x:state.lon,y:state.lat});
+  // initial evidence
+  setTimeout(()=>showEvidence({id:'--',type:'No target selected',conf:0,risk:'LOW',depth:'--',time:'--',sensorConfs:{'Side-Scan':'0','Optical':'0','Bathymetry':'0'}}),500);
+});
+window.addEventListener('resize',resizeSonar);
+</script>
+</body>
+</html>
