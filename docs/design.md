@@ -5,7 +5,7 @@
 
 ---
 
-## 1. Standard Report Schema (Frozen at Phase 0)
+## 1. Standard Report Schema (Frozen at Phase 0):
 
 To ensure strict interoperability between pipeline modules and downstream consumers, the export schema is frozen in Phase 0.
 
@@ -45,7 +45,7 @@ The CSV export directly mirrors the flattened `detections` array:
 
 ---
 
-## 2. Preprocessing Design.
+## 2. Preprocessing Design:
 
 Sonar imagery exhibits intense multiplicative speckle noise, non-uniform acoustic illumination, and sensor motion artifacts. The preprocessing pipeline standardizes raw imagery prior to inference.
 
@@ -58,7 +58,7 @@ Sonar imagery exhibits intense multiplicative speckle noise, non-uniform acousti
 
 ---
 
-## 3. Model Design
+## 3. Model Design:
 
 * **Primary Model Architecture:** **YOLOv8-seg** (Instance Segmentation). Chosen for optimal speed/accuracy trade-off, real-time bounding box and segmentation mask extraction, and native ONNX runtime export capabilities.
 * **Alternative Considered:** **U-Net** (PyTorch). Excellent for dense pixel-level masks, but higher inference latency on embedded edge hardware; retained as an alternative if boundary precision requires improvement.
@@ -70,7 +70,7 @@ Sonar imagery exhibits intense multiplicative speckle noise, non-uniform acousti
 
 ---
 
-## 4. Confidence Scoring & Filtering Design
+## 4. Confidence Scoring & Filtering Design:
 
 Raw neural network confidence scores are frequently uncalibrated (over-confident on out-of-distribution noise). The filtering stage guarantees statistical precision:
 
@@ -85,7 +85,7 @@ Acoustic shadows are critical in side-scan sonar interpretation. The false-posit
 
 ---
 
-## 5. Geotagging Design
+## 5. Geotagging Design:
 
 Georeferencing translates sonar image pixel coordinates $(u, v)$ into absolute geographic coordinates $(\text{lat}, \text{lon})$:
 
@@ -101,7 +101,7 @@ Georeferencing translates sonar image pixel coordinates $(u, v)$ into absolute g
 
 ---
 
-## 6. UI / Dashboard Flow
+## 6. UI / Dashboard Flow:
 
 The redesigned Streamlit application removes simulation sliders and focuses strictly on the operational analyst flow:
 
