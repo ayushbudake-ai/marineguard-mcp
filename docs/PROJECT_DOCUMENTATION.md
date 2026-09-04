@@ -1,5 +1,5 @@
 # MarineGuard: Automated Underwater Marine Debris Detection System
-## Comprehensive Technical & Architectural Documentation
+## Comprehensive Technical & Architectural Documentation:
 
 **Repository:** `ayushbudake-ai/marineguard-mcp`  
 **Problem Statement ID:** SIH26057  
@@ -584,7 +584,7 @@ python -m pytest
 
 ## 18. Current Implementation Status & Discrepancy Matrix
 
-In compliance with `rules.md §3 & §9`, this matrix provides an unvarnished audit comparing earlier documentation claims against verifiable codebase evidence:
+In compliance with `rules.md §3 & §9`, this matrix provides an unvarnished audit comparing earlier documentation claims against verifiable codebase evidence
 
 | System Subsystem | Documentation Claim | Verifiable Codebase Reality | Classification | Required Phase Action |
 |:---|:---|:---|:---|:---|
