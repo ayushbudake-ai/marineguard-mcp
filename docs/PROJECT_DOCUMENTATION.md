@@ -1,5 +1,5 @@
-# MarineGuard: Automated Underwater Marine Debris Detection System
-## Comprehensive Technical & Architectural Documentation
+# MarineGuard: Automated Underwater Marine Debris Detection System:
+## Comprehensive Technical & Architectural Documentation:
 
 **Repository:** `ayushbudake-ai/marineguard-mcp`  
 **Problem Statement ID:** SIH26057  
