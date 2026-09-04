@@ -39,13 +39,13 @@ To ensure strict interoperability between pipeline modules and downstream consum
 }
 ```
 
-### CSV Report Structure
+### CSV Report Structure.
 The CSV export directly mirrors the flattened `detections` array:
 `detection_id, classification, confidence, width_m, height_m, lat, lon, depth_m, sensor_source`
 
 ---
 
-## 2. Preprocessing Design
+## 2. Preprocessing Design.
 
 Sonar imagery exhibits intense multiplicative speckle noise, non-uniform acoustic illumination, and sensor motion artifacts. The preprocessing pipeline standardizes raw imagery prior to inference.
 
