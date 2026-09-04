@@ -12,6 +12,20 @@
 
 ---
 
+## 📚 Project Documentation & Technical Specifications
+
+In accordance with SIH26057 requirements, comprehensive technical documentation and architectural specifications are maintained in the [`docs/`](docs/) directory:
+
+| Document | Description | Link |
+|:---|:---|:---|
+| **Master Technical Documentation** | Comprehensive 19-section technical reference, data models, workflows, and discrepancy matrix | [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md) |
+| **Project Requirement Document** | Formal PRD covering SIH26057 scope, functional & non-functional requirements | [`docs/project_requirement_document.md`](docs/project_requirement_document.md) |
+| **Architecture Specification** | High-level data flow, module inventory, tech stack, and data contracts | [`docs/architecture.md`](docs/architecture.md) |
+| **Design Document** | Frozen Phase 0 report schema, preprocessing, model design, and calibration heuristics | [`docs/design.md`](docs/design.md) |
+| **Project Memory & Decision Log** | Scope correction rationale (SIH26057 alignment), kept vs. dropped features | [`docs/memory.md`](docs/memory.md) |
+| **Execution Roadmap** | Hackathon timeline from Phase 0 to Phase 4 with strict exit criteria | [`docs/phases.md`](docs/phases.md) |
+| **Engineering Rules** | 9 core rules covering scope discipline, metrics honesty, and coding conventions | [`docs/rules.md`](docs/rules.md) |
+
 ## 🚀 Live Demo — Click to Open
 
 <div align="center">
