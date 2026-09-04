@@ -12,7 +12,7 @@
 
 ---
 
-## 📚 Project Documentation & Technical Specifications
+## 📚 Project Documentation & Technical Specifications 
 
 In accordance with SIH26057 requirements, comprehensive technical documentation and architectural specifications are maintained in the [`docs/`](docs/) directory:
 
@@ -26,7 +26,7 @@ In accordance with SIH26057 requirements, comprehensive technical documentation 
 | **Execution Roadmap** | Hackathon timeline from Phase 0 to Phase 4 with strict exit criteria | [`docs/phases.md`](docs/phases.md) |
 | **Engineering Rules** | 9 core rules covering scope discipline, metrics honesty, and coding conventions | [`docs/rules.md`](docs/rules.md) |
 
-## 🚀 Live Demo — Click to Open
+## 🚀 Live Demo — Click here to Open
 
 <div align="center">
 
