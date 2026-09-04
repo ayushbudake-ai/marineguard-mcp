@@ -39,7 +39,7 @@ To ensure strict interoperability between pipeline modules and downstream consum
 }
 ```
 
-### CSV Report Structure
+### CSV Report Structure.
 The CSV export directly mirrors the flattened `detections` array:
 `detection_id, classification, confidence, width_m, height_m, lat, lon, depth_m, sensor_source`
 
