@@ -1,0 +1,67 @@
+{
+  "s100Header": {
+    "specification": "IHO S-100 Universal Hydrographic Data Model",
+    "edition": "5.0.0",
+    "datasetTitle": "MoES MarineGuard Autonomous Underwater Debris Survey",
+    "producer": "Ministry of Earth Sciences (MoES) MarineGuard MCP Agent",
+    "compliance": "S-102 Bathymetry & S-124 Navigational Warnings"
+  },
+  "features": [
+    {
+      "featureIdentifier": "TARGET_01",
+      "s100FeatureCode": "Obstruction",
+      "categoryOfObstruction": "Ghost Net Cluster (Entangled Nylon Netting)",
+      "depthValuation": 24.3,
+      "qualityOfSoundingMeasurement": "EvaluatedByMultiSensorFusion",
+      "horizontalAccuracyMeters": 0.1,
+      "position": {
+        "latitude": 13.0835,
+        "longitude": 80.2715
+      },
+      "hazardSeverity": "HIGH",
+      "evidenceTraceId": "EVIDENCE_TARGET_01"
+    },
+    {
+      "featureIdentifier": "TARGET_02",
+      "s100FeatureCode": "UnderwaterWreckOrDebris",
+      "categoryOfObstruction": "Industrial HDPE Plastic Container Field",
+      "depthValuation": 25.1,
+      "qualityOfSoundingMeasurement": "EvaluatedByMultiSensorFusion",
+      "horizontalAccuracyMeters": 0.1,
+      "position": {
+        "latitude": 13.0842,
+        "longitude": 80.2728
+      },
+      "hazardSeverity": "MEDIUM",
+      "evidenceTraceId": "EVIDENCE_TARGET_02"
+    },
+    {
+      "featureIdentifier": "TARGET_03",
+      "s100FeatureCode": "UnderwaterWreckOrDebris",
+      "categoryOfObstruction": "Sunken Steel Cable & Metal Structures",
+      "depthValuation": 23.8,
+      "qualityOfSoundingMeasurement": "EvaluatedByMultiSensorFusion",
+      "horizontalAccuracyMeters": 0.1,
+      "position": {
+        "latitude": 13.085,
+        "longitude": 80.2741
+      },
+      "hazardSeverity": "LOW",
+      "evidenceTraceId": "EVIDENCE_TARGET_03"
+    },
+    {
+      "featureIdentifier": "TARGET_04",
+      "s100FeatureCode": "Obstruction",
+      "categoryOfObstruction": "Submerged Explosive Ordnance / Casing",
+      "depthValuation": 26.0,
+      "qualityOfSoundingMeasurement": "EvaluatedByMultiSensorFusion",
+      "horizontalAccuracyMeters": 0.1,
+      "position": {
+        "latitude": 13.0858,
+        "longitude": 80.2755
+      },
+      "hazardSeverity": "CRITICAL",
+      "evidenceTraceId": "EVIDENCE_TARGET_04"
+    }
+  ]
+}

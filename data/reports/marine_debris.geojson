@@ -1,0 +1,107 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.2715,
+          13.0835
+        ]
+      },
+      "properties": {
+        "target_id": "TARGET_01",
+        "species": "Ghost Net Cluster (Entangled Nylon Netting)",
+        "confidence": 0.874,
+        "depth_m": 24.3,
+        "dimensions_m": "12.0x8.0x0.5",
+        "removal_priority": "HIGH",
+        "entanglement_risk": "HIGH",
+        "sensor_contributions": {
+          "side_scan": 0.91,
+          "optical": 0.86,
+          "bathymetry": 0.635
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.2728,
+          13.0842
+        ]
+      },
+      "properties": {
+        "target_id": "TARGET_02",
+        "species": "Industrial HDPE Plastic Container Field",
+        "confidence": 0.909,
+        "depth_m": 25.1,
+        "dimensions_m": "2.5x1.8x1.2",
+        "removal_priority": "MEDIUM",
+        "entanglement_risk": "MEDIUM",
+        "sensor_contributions": {
+          "side_scan": 0.84,
+          "optical": 0.89,
+          "bathymetry": 0.845
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.2741,
+          13.085
+        ]
+      },
+      "properties": {
+        "target_id": "TARGET_03",
+        "species": "Sunken Steel Cable & Metal Structures",
+        "confidence": 0.937,
+        "depth_m": 23.8,
+        "dimensions_m": "3.8x3.0x2.1",
+        "removal_priority": "LOW",
+        "entanglement_risk": "LOW",
+        "sensor_contributions": {
+          "side_scan": 0.94,
+          "optical": 0.78,
+          "bathymetry": 0.95
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.2755,
+          13.0858
+        ]
+      },
+      "properties": {
+        "target_id": "TARGET_04",
+        "species": "Submerged Explosive Ordnance / Casing",
+        "confidence": 0.808,
+        "depth_m": 26.0,
+        "dimensions_m": "1.2x0.4x0.4",
+        "removal_priority": "HIGH",
+        "entanglement_risk": "CRITICAL",
+        "sensor_contributions": {
+          "side_scan": 0.88,
+          "optical": 0.72,
+          "bathymetry": 0.614
+        }
+      }
+    }
+  ]
+}

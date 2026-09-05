@@ -2,53 +2,41 @@
 __pycache__/
 *.py[cod]
 *.pyo
-*.pyd
-.Python
-*.egg
-*.egg-info/
-dist/
-build/
-eggs/
-parts/
-var/
-sdist/
-develop-eggs/
-.installed.cfg
-lib/
-lib64/
 
 # Virtual environments
-.env
-.venv
-env/
+.venv/
 venv/
-ENV/
+env/
 
-# Pytest
-.pytest_cache/
-.cache/
+# Large dataset files
+data/raw/
+data/processed/marineguard/images/
+data/processed/marineguard/labels/
+data/processed/fls/labels/
+
+# Dataset image/archive files
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.rar
+*.zip
+
+# Ultralytics caches
+*.cache
+
+# Training outputs
+runs/
+*.pt
+*.onnx
+
+# Logs
 *.log
-
-# Jupyter
-.ipynb_checkpoints/
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Data / output artifacts
-data/evidence/
-data/reports/
-*.pdf
-*.zip
-*.docx
-
-# Secrets / configs with credentials
-*.key
-*.pem
