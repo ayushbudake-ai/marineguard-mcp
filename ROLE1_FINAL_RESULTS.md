@@ -40,7 +40,7 @@ Final label validation result: **0 invalid boxes**
 Training completed successfully and produced:
 
 ```text
-C:\aaaa\SIH\marineguard-mcp\runs\marineguard_full_512_b16-2\weights\best.pt
+runs/marineguard_full_512_b16-2/weights/best.pt
 ```
 
 ## 4. Final held-out TEST results

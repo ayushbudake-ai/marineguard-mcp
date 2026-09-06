@@ -4,7 +4,7 @@
 YOLOv8n object detector
 
 ## Trained checkpoint
-`C:\aaaa\SIH\marineguard-mcp\runs\marineguard_full_512_b16-2\weights\best.pt`
+`runs/marineguard_full_512_b16-2/weights/best.pt`
 
 ## Dataset
 18,073 images
