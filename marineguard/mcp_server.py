@@ -2,8 +2,10 @@
 MarineGuard MCP Server — Model Context Protocol Tool Interface
 """
 
+import base64
 import json
-from typing import Dict, Any, List
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Union
 from marineguard.schemas import PlatformSpec, Action, MissionContext, SurveyJob
 from marineguard.compiler.sensor_parser import SensorParser
 from marineguard.compiler.mcp_emitter import MCPEmitter
@@ -12,6 +14,8 @@ from marineguard.detection.sas import SASDetector
 from marineguard.detection.optical import OpticalDetector
 from marineguard.detection.bathymetry import BathymetryDetector
 from marineguard.detection.fusion import MultiSensorFusionEngine
+from marineguard.detection.pipeline import ImageDetectionPipeline, ImageValidationError
+from marineguard.detection.model_loader import ModelNotFoundError
 from marineguard.firewall.policy import MissionFirewallPolicy
 from marineguard.trace.tracer import ExplainableTracer
 from marineguard.exporters.pdf_report import PDFReportExporter
@@ -21,13 +25,18 @@ from data.test_data.sample_frames import FrameReplayHarness
 
 
 class MarineGuardMCPServer:
-    """Model Context Protocol (MCP) Server exposing marine debris survey tools."""
+    """Model Context Protocol (MCP) Server exposing marine debris survey and detection tools."""
 
-    def __init__(self, platform_spec_path: str = "data/sensor_specs/sagar_netra.yaml"):
+    def __init__(
+        self,
+        platform_spec_path: str = "data/sensor_specs/sagar_netra.yaml",
+        detection_pipeline: Optional[ImageDetectionPipeline] = None,
+    ):
         self.parser = SensorParser()
         self.emitter = MCPEmitter()
         self.tracer = ExplainableTracer()
         self.firewall = MissionFirewallPolicy()
+        self.detection_pipeline = detection_pipeline if detection_pipeline is not None else ImageDetectionPipeline()
         self.load_platform(platform_spec_path)
 
     def load_platform(self, platform_spec_path: str):
@@ -42,6 +51,87 @@ class MarineGuardMCPServer:
             confidence=1.0,
             reasoning=f"Compiled {len(self.registry.tools_emitted)} MCP tools dynamically.",
         )
+
+    def detect_marine_debris(
+        self,
+        image_input: Union[str, bytes, bytearray],
+        confidence_threshold: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """MCP Tool: detect_marine_debris
+
+        Runs AI inference on a single image frame (optical or sonar waterfall)
+        and returns structured marine debris detections without exposing YOLO internals.
+
+        Args:
+            image_input: File path string, raw bytes, or base64 data string.
+            confidence_threshold: Optional confidence threshold override.
+
+        Returns:
+            Dict containing structured detection results or explicit error details.
+        """
+        # Handle Base64 string input if passed
+        raw_input: Union[str, bytes] = image_input
+        if isinstance(image_input, str) and not Path(image_input).exists():
+            # Check if it's base64 encoded
+            try:
+                if "," in image_input:
+                    # Strip data:image/...;base64, prefix if present
+                    image_input = image_input.split(",", 1)[1]
+                raw_input = base64.b64decode(image_input)
+            except Exception:
+                # Treat as path that will fail validation cleanly
+                raw_input = image_input
+
+        # Adjust threshold if requested
+        if confidence_threshold is not None:
+            self.detection_pipeline.postprocessor.confidence_threshold = confidence_threshold
+
+        try:
+            result = self.detection_pipeline.process(raw_input)
+
+            self.tracer.log(
+                stage="MCP_DETECTION",
+                input_summary=f"Debris detection requested on input ({type(image_input).__name__})",
+                output_summary=f"Detected {result.count} debris targets",
+                model=result.model_name or "YOLODetector",
+                confidence=float(result.detections[0].confidence) if result.detections else 1.0,
+                reasoning=f"Processed image {result.image_width}x{result.image_height} in {result.inference_time_ms or 0:.1f}ms",
+            )
+
+            return {
+                "status": "SUCCESS",
+                "count": result.count,
+                "detections": [d.to_dict() for d in result.detections],
+                "image_width": result.image_width,
+                "image_height": result.image_height,
+                "inference_time_ms": result.inference_time_ms,
+                "model_name": result.model_name,
+            }
+
+        except ImageValidationError as val_err:
+            return {
+                "status": "ERROR",
+                "error_type": "INVALID_IMAGE",
+                "message": str(val_err),
+                "detections": [],
+                "count": 0,
+            }
+        except ModelNotFoundError as model_err:
+            return {
+                "status": "MODEL_UNAVAILABLE",
+                "error_type": "MODEL_NOT_FOUND",
+                "message": str(model_err),
+                "detections": [],
+                "count": 0,
+            }
+        except Exception as exc:
+            return {
+                "status": "ERROR",
+                "error_type": "INFERENCE_ERROR",
+                "message": str(exc),
+                "detections": [],
+                "count": 0,
+            }
 
     def marine_debris_survey(self, platform: str, survey_area: Dict[str, Any], objectives: List[str]) -> Dict[str, Any]:
         """Executes full autonomous survey pipeline."""

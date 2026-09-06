@@ -1,18 +1,34 @@
 """
-Side-Scan Sonar Detection Pipeline for MarineGuard MCP
+Side-Scan Sonar Detection Pipeline for MarineGuard MCP — Role 2: AI Inference & Integration
 """
 
+from typing import Dict, Any, List, Optional
 import numpy as np
-from typing import Dict, Any, List
 from marineguard.schemas import DebrisContact
+from marineguard.detection.model_loader import MarineDebrisModel
 
 
 class SideScanDetector:
-    """CFAR + YOLOv8-seg Side-Scan Sonar Waterfall Processing Engine."""
+    """CFAR pre-filter + YOLO Side-Scan Sonar Waterfall Processing Engine.
 
-    def __init__(self, cfar_pfa: float = 1e-4, confidence_threshold: float = 0.50):
+    Runs the trained model on real waterfall sonar imagery when available.
+    In development/replay test mode (when best.pt is pending from Member 1),
+    falls back to ping metadata to maintain pipeline testability.
+    """
+
+    def __init__(
+        self,
+        cfar_pfa: float = 1e-4,
+        confidence_threshold: float = 0.50,
+        model: Optional[MarineDebrisModel] = None,
+    ):
         self.cfar_pfa = cfar_pfa
         self.confidence_threshold = confidence_threshold
+        self.model = model if model is not None else MarineDebrisModel.get(confidence_threshold=confidence_threshold)
+
+    @property
+    def is_model_loaded(self) -> bool:
+        return self.model.is_loaded
 
     def cfar_detect(self, waterfall_row: np.ndarray, num_guard: int = 4, num_ref: int = 16) -> List[int]:
         """Cell-Averaging Constant False Alarm Rate (CA-CFAR) anomaly detector."""
@@ -30,15 +46,40 @@ class SideScanDetector:
                 anomalies.append(i)
         return anomalies
 
-    def process_waterfall_ping(self, ping_payload: Dict[str, Any]) -> List[DebrisContact]:
-        """Runs CFAR and YOLOv8-seg simulation on side-scan ping payload."""
+    def process_waterfall_ping(self, ping_payload: Dict[str, Any], allow_dev_fallback: bool = True) -> List[DebrisContact]:
+        """Runs CFAR pre-filtering, then model detection on side-scan ping payload."""
         meta = ping_payload.get("target_meta", {})
         sonar_img = ping_payload.get("sonar_waterfall")
 
-        if sonar_img is not None and isinstance(sonar_img, np.ndarray):
-            # Run CFAR on middle line
-            middle_row = sonar_img[128, :]
-            anomalies = self.cfar_detect(middle_row)
+        if sonar_img is not None and isinstance(sonar_img, np.ndarray) and len(sonar_img.shape) >= 2:
+            # CFAR pre-filter
+            row_idx = min(128, sonar_img.shape[0] - 1)
+            middle_row = sonar_img[row_idx, :]
+            if len(middle_row.shape) == 1:
+                _ = self.cfar_detect(middle_row)
+
+        # Real model inference path
+        if self.model.is_loaded and sonar_img is not None:
+            detections = self.model.predict(sonar_img)
+            contacts = []
+            for i, det in enumerate(detections):
+                contacts.append(DebrisContact(
+                    contact_id=f"SONAR_{meta.get('id', f'Contact_{i:02d}')}",
+                    sensor_id="side_scan_01",
+                    sensor_type="side_scan",
+                    raw_confidence=round(det["confidence"], 3),
+                    bbox=det["bbox"],
+                    label_candidate=det["class_name"],
+                    acoustic_shadow_ratio=meta.get("shadow_ratio", 0.35),
+                    estimated_dimensions_m=meta.get("dimensions_m", (10.0, 5.0, 0.5)),
+                    lat_lon=meta.get("lat_lon", (13.0835, 80.2715)),
+                    depth_m=meta.get("depth_m", 24.3),
+                ))
+            return contacts
+
+        # Development test replay fallback (active while best.pt is pending from Member 1)
+        if not allow_dev_fallback:
+            return []
 
         confidence = meta.get("sonar_confidence", 0.88)
         if confidence < self.confidence_threshold:
@@ -56,5 +97,4 @@ class SideScanDetector:
             lat_lon=meta.get("lat_lon", (13.0835, 80.2715)),
             depth_m=meta.get("depth_m", 24.3),
         )
-
         return [contact]
