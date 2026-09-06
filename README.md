@@ -1,3 +1,5 @@
+> ⚠️ **Notice — README under revision.** This file still describes an earlier prototype concept (autonomous MCP agent, Mission Firewall, S-100 export). The project's scope was corrected to align strictly with the **SIH26057** problem statement — see [`docs/memory.md`](docs/memory.md) for the full rationale and [`docs/architecture.md`](docs/architecture.md) for the current system design. Real, held-out test results for the trained detector are in [`ROLE1_FINAL_RESULTS.md`](ROLE1_FINAL_RESULTS.md). This README will be rewritten to match in Phase 4 (see [`docs/phases.md`](docs/phases.md)); until then, treat `docs/` as the source of truth.
+
 # 🌊 MarineGuard MCP
 
 > **SIH Problem Statement SIH26057**
