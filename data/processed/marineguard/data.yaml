@@ -1,12 +1,8 @@
-# NOTE: 'path' is resolved relative to wherever `yolo`/ultralytics is invoked FROM,
-# not relative to this file. Safest is to pass an ABSOLUTE path at train-time by
-# setting the MARINEGUARD_DATA_ROOT env var (see run_full_training.py), which
-# rewrites this field automatically. Left relative here so a plain `cd` into the
-# repo root + relative execution also works out of the box.
-path: data/processed/marineguard
+path: .
 train: images/train
 val: images/val
 test: images/test
+
 names:
   0: bottle
   1: can

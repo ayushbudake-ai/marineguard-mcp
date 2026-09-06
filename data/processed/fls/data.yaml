@@ -1,4 +1,4 @@
-path: data/processed/fls
+path: .
 
 train: images/train
 val: images/val

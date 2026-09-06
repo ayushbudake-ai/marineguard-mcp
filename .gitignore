@@ -40,3 +40,5 @@ runs/
 # OS
 .DS_Store
 Thumbs.db
+# V2 processed/generated dataset
+data/processed_v2/
