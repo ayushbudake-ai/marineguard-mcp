@@ -25,7 +25,7 @@ MarineGuard aims to automate this detection process using computer vision and a 
 
 ---
 
-# 🧠 Current System
+# 🧠 Current System:
 
 The current project is organized around the following pipeline:
 
