@@ -1,7 +1,9 @@
-path: C:/aaaa/SIH/marineguard-mcp/data/processed/marineguard
+path: .
+
 train: images/train
 val: images/val
 test: images/test
+
 names:
   0: bottle
   1: can
