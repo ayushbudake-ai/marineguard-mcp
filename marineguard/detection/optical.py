@@ -1,22 +1,60 @@
 """
-Underwater Optical Detection & SAM2 Segmentation Pipeline for MarineGuard MCP
+Underwater Optical Detection Pipeline for MarineGuard MCP — Role 2: AI Inference & Integration
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+import numpy as np
 from marineguard.schemas import DebrisContact
+from marineguard.detection.model_loader import MarineDebrisModel
 
 
 class OpticalDetector:
-    """RT-DETR + SAM2 Optical Debris Classification & Instance Segmentation Engine."""
+    """Optical Debris Classification Engine.
 
-    def __init__(self, confidence_threshold: float = 0.50):
+    Runs the trained model on real optical crops when available.
+    In development/replay test mode (when best.pt is pending from Member 1),
+    falls back to ping metadata to maintain pipeline testability.
+    """
+
+    def __init__(
+        self,
+        confidence_threshold: float = 0.50,
+        model: Optional[MarineDebrisModel] = None,
+    ):
         self.confidence_threshold = confidence_threshold
+        self.model = model if model is not None else MarineDebrisModel.get(confidence_threshold=confidence_threshold)
 
-    def process_optical_frame(self, ping_payload: Dict[str, Any]) -> List[DebrisContact]:
-        """Runs RT-DETR detection & SAM2 instance mask generation on optical crop."""
+    @property
+    def is_model_loaded(self) -> bool:
+        return self.model.is_loaded
+
+    def process_optical_frame(self, ping_payload: Dict[str, Any], allow_dev_fallback: bool = True) -> List[DebrisContact]:
         meta = ping_payload.get("target_meta", {})
-        confidence = meta.get("optical_confidence", 0.85)
 
+        # Real model inference path
+        if self.model.is_loaded:
+            frame = ping_payload.get("optical_crop")
+            detections = self.model.predict(frame) if frame is not None else []
+            contacts = []
+            for i, det in enumerate(detections):
+                contacts.append(DebrisContact(
+                    contact_id=f"OPTICAL_{meta.get('id', f'Contact_{i:02d}')}",
+                    sensor_id="optical_01",
+                    sensor_type="optical",
+                    raw_confidence=round(det["confidence"], 3),
+                    bbox=det["bbox"],
+                    label_candidate=det["class_name"],
+                    estimated_dimensions_m=meta.get("dimensions_m", (10.0, 5.0, 0.5)),
+                    lat_lon=meta.get("lat_lon", (13.0835, 80.2715)),
+                    depth_m=meta.get("depth_m", 24.3),
+                ))
+            return contacts
+
+        # Development test replay fallback (active while best.pt is pending from Member 1)
+        if not allow_dev_fallback:
+            return []
+
+        confidence = meta.get("optical_confidence", 0.85)
         if confidence < self.confidence_threshold:
             return []
 
@@ -31,5 +69,4 @@ class OpticalDetector:
             lat_lon=meta.get("lat_lon", (13.0835, 80.2715)),
             depth_m=meta.get("depth_m", 24.3),
         )
-
         return [contact]

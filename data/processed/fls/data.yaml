@@ -1,4 +1,4 @@
-path: C:/aaaa/SIH/marineguard-mcp/data/processed/fls
+path: data/processed/fls
 
 train: images/train
 val: images/val
