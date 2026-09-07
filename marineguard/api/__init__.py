@@ -1,0 +1,3 @@
+"""
+MarineGuard MCP API Package
+"""
