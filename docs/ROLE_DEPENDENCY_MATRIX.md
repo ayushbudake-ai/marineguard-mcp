@@ -35,7 +35,7 @@ GitHub is the authoritative handoff source. No downstream role should depend on 
 
 ---
 
-## Role 1 → Role 2 Dependency Details
+## Role 1 -> Role 2 Dependency Details
 
 ### V1 Model
 
@@ -113,9 +113,9 @@ The generated dataset configuration is therefore reproducible together with the 
 
 ---
 
-## Role 1 → downstream dependency rule
+## Role 1 -> downstream dependency rule
 
-Roles 2–5 must be able to obtain their required Role-1 interfaces from GitHub without requesting files from Role 1's local computer.
+Roles 2-5 must be able to obtain their required Role-1 interfaces from GitHub without requesting files from Role 1's local computer.
 
 For generated large artifacts that are intentionally not stored in GitHub, the repository must provide sufficient source information, conversion scripts, validation rules, and reproduction instructions to recreate the artifact.
 
@@ -181,10 +181,9 @@ A required dependency cannot currently be obtained or reproduced from the reposi
 | V1 taxonomy                | READY        |
 | V1 metrics                 | READY        |
 | V1 detection schema        | READY        |
-| V1 Role 1 → Role 2 handoff | READY        |
+| V1 Role 1 -> Role 2 handoff | READY        |
 | V1 processed dataset       | REPRODUCIBLE |
 | V1 dataset YAML            | REPRODUCIBLE |
-| Role 2 → Role 3 contract   | READY        |
-| Role 3 → Role 4 contract   | READY        |
-| Role 4 → Role 5 contract   | READY        |
-| V1 baseline                | FROZEN       |
+| Role 2 -> Role 3 contract   | READY        |
+| Role 3 -> Role 4 contract   | READY        |
+| Role 4 -> Role 5 contract   | READY        |
