@@ -1,3 +1,13 @@
+detection:
+  model_path: "models/best.pt"
+  onnx_path: "models/best.onnx"
+  classes_path: "marineguard_classes.yaml"
+  confidence_threshold: 0.50
+  iou_threshold: 0.45
+  input_size: 640
+  device: "cpu"  # or "cuda:0"
+  max_detections: 300
+
 compiler:
   supported_formats:
     sonar: [XTF, GSF, SAS, SDF]

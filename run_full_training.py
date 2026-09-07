@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 from ultralytics import YOLO
 
 REPO = Path(__file__).resolve().parent
@@ -17,3 +17,4 @@ model.train(
     project=str(RUNS),
     name="marineguard_full_512_b16-2",
 )
+
