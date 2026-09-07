@@ -1,0 +1,11 @@
+{
+  "model_version": "v1",
+  "image_size": 512,
+  "confidence_threshold": 0.25,
+  "images_tested": 20,
+  "total_inference_time_sec": 0.6815,
+  "average_latency_ms": 34.08,
+  "min_latency_ms": 22.31,
+  "max_latency_ms": 111.24,
+  "images_per_second": 29.35
+}
