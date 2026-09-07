@@ -102,6 +102,15 @@ class ImageAnnotator:
 
             color = self._get_color_for_label(det.class_name)
 
+            # Draw segmentation polygon outline if present
+            if det.segmentation and len(det.segmentation) >= 3:
+                try:
+                    poly_pts = [(float(pt[0]), float(pt[1])) for pt in det.segmentation if len(pt) >= 2]
+                    if len(poly_pts) >= 3:
+                        draw.polygon(poly_pts, outline=color)
+                except Exception:
+                    pass
+
             # Draw bounding box outline
             for i in range(self.box_thickness):
                 draw.rectangle([x1 - i, y1 - i, x2 + i, y2 + i], outline=color)

@@ -29,16 +29,22 @@ class BasePreprocessor(ABC):
 
 
 class DefaultPreprocessor(BasePreprocessor):
-    """Standard preprocessor for standard optical and sonar inputs.
+    """Standard preprocessor for optical and sonar inputs.
 
     Performs non-scientific image normalization (dimension checks,
-    color space conversion, optional target resizing).
+    color space conversion, channel ordering, optional target resizing).
     Serves as the default until Member 1 supplies domain-specific filters.
     """
 
-    def __init__(self, target_size: Optional[Tuple[int, int]] = None, normalize_channels: bool = True):
+    def __init__(
+        self,
+        target_size: Optional[Tuple[int, int]] = None,
+        normalize_channels: bool = True,
+        to_bgr: bool = True,
+    ):
         self.target_size = target_size  # (width, height)
         self.normalize_channels = normalize_channels
+        self.to_bgr = to_bgr
 
     def preprocess(self, image: np.ndarray) -> np.ndarray:
         if not isinstance(image, np.ndarray):
@@ -55,6 +61,10 @@ class DefaultPreprocessor(BasePreprocessor):
         elif len(processed.shape) == 3 and processed.shape[2] == 4:
             # Drop alpha channel (RGBA -> RGB)
             processed = processed[:, :, :3]
+
+        # Convert RGB to BGR for standard detector expectation if 3-channel
+        if self.to_bgr and len(processed.shape) == 3 and processed.shape[2] == 3:
+            processed = processed[:, :, ::-1]
 
         # Optional resizing
         if self.target_size is not None:

@@ -44,10 +44,11 @@ class BaseDetector(ABC):
 
 
 class YOLODetector(BaseDetector):
-    """Production YOLO Detector.
+    """Production YOLO / ONNX Detector.
 
-    Consumes Member 1's models/best.pt and official marineguard_classes.yaml.
-    Fails clearly if best.pt is unavailable when production inference is invoked.
+    Consumes verified model weights (e.g. runs/seaclear_yolov8n_seg/onnx/best.onnx or models/best.pt)
+    and official marineguard_classes.yaml.
+    Fails clearly if model weights are unavailable when production inference is invoked.
     """
 
     def __init__(
@@ -74,15 +75,15 @@ class YOLODetector(BaseDetector):
         return f"YOLODetector({self.model_loader.model_path.name})"
 
     def detect(self, image: np.ndarray) -> DetectionResult:
-        """Executes YOLO inference on an image array.
+        """Executes YOLO/ONNX inference on an image array.
 
         Raises:
             ModelNotFoundError: If production model weights are not loaded.
         """
         if not self.is_ready:
             raise ModelNotFoundError(
-                f"Production YOLO model is not available at '{self.model_loader.model_path}'. "
-                f"Member 1's trained 'models/best.pt' must be provided before running real inference. "
+                f"Production YOLO/ONNX model is not available at '{self.model_loader.model_path}'. "
+                f"Trained weights must be provided before running real inference. "
                 f"(Use MockDetector for unit tests)."
             )
 
@@ -90,7 +91,7 @@ class YOLODetector(BaseDetector):
         raw_detections = self.model_loader.predict(image)
         latency_ms = (time.perf_counter() - start_time) * 1000.0
 
-        h, w = image.shape[:2]
+        h, w = image.shape[:2] if hasattr(image, "shape") and len(image.shape) >= 2 else (512, 512)
         detections: List[Detection] = []
         for raw in raw_detections:
             detections.append(
@@ -101,6 +102,74 @@ class YOLODetector(BaseDetector):
                     bbox=list(raw["bbox"]),
                     segmentation=raw.get("segmentation"),
                     metadata={"source_sensor": raw.get("sensor", "optical_or_sonar")},
+                )
+            )
+
+        return DetectionResult.from_detections(
+            detections=detections,
+            image_width=w,
+            image_height=h,
+            inference_time_ms=latency_ms,
+            model_name=self.model_name,
+        )
+
+
+class ONNXOpticalDetector(BaseDetector):
+    """Dedicated Optical ONNX Instance Segmentation Detector.
+
+    Consumes the verified YOLOv8n-seg ONNX model (runs/seaclear_yolov8n_seg/onnx/best.onnx)
+    and official marineguard_classes.yaml.
+    """
+
+    def __init__(
+        self,
+        model_path: Optional[Union[str, Path]] = None,
+        classes_path: Optional[Union[str, Path]] = None,
+        confidence_threshold: float = 0.50,
+        iou_threshold: float = 0.45,
+    ):
+        self.confidence_threshold = confidence_threshold
+        self.iou_threshold = iou_threshold
+        repo_root = Path(__file__).resolve().parents[2]
+        target_path = Path(model_path) if model_path is not None else (
+            repo_root / "runs" / "seaclear_yolov8n_seg" / "onnx" / "best.onnx"
+        )
+        self.model_loader = MarineDebrisModel.get(
+            model_path=target_path,
+            classes_path=classes_path,
+            confidence_threshold=confidence_threshold,
+        )
+
+    @property
+    def is_ready(self) -> bool:
+        return self.model_loader.is_loaded
+
+    @property
+    def model_name(self) -> str:
+        return f"ONNXOpticalDetector({self.model_loader.model_path.name})"
+
+    def detect(self, image: np.ndarray) -> DetectionResult:
+        """Executes ONNX segmentation inference on an image array."""
+        if not self.is_ready:
+            raise ModelNotFoundError(
+                f"ONNX optical segmentation model not available at '{self.model_loader.model_path}'."
+            )
+
+        start_time = time.perf_counter()
+        raw_detections = self.model_loader.predict(image)
+        latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+        h, w = image.shape[:2] if hasattr(image, "shape") and len(image.shape) >= 2 else (512, 512)
+        detections: List[Detection] = []
+        for raw in raw_detections:
+            detections.append(
+                Detection(
+                    class_name=raw["class_name"],
+                    class_id=raw.get("class_id"),
+                    confidence=raw["confidence"],
+                    bbox=list(raw["bbox"]),
+                    segmentation=raw.get("segmentation"),
+                    metadata={"source_sensor": "optical", "engine": "onnxruntime"},
                 )
             )
 
