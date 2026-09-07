@@ -1,4 +1,4 @@
-﻿import json
+import json
 import time
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from marineguard.v1_detector import MarineGuardV1Detector
 detector = MarineGuardV1Detector()
 
 images = list(
-    Path(r"data\processed\marineguard\images\test").glob("*")
+    (Path(__file__).resolve().parent / "data" / "processed" / "marineguard" / "images" / "test").glob("*")
 )[:20]
 
 if not images:

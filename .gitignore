@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -8,11 +8,12 @@ __pycache__/
 venv/
 env/
 
-# Large dataset files
+# Large datasets
 data/raw/
 data/processed/marineguard/images/
 data/processed/marineguard/labels/
 data/processed/fls/labels/
+data/processed_v2/
 
 # Dataset image/archive files
 *.jpg
@@ -26,8 +27,18 @@ data/processed/fls/labels/
 *.cache
 
 # Training outputs
-runs/
+runs/*
+!runs/marineguard_full_512_b16-2/
+!runs/marineguard_full_512_b16-2/weights/
+!runs/marineguard_full_512_b16-2/weights/best.pt
+!runs/marineguard_v2_final/
+!runs/marineguard_v2_final/weights/
+!runs/marineguard_v2_final/weights/best.pt
+
+# Model/export files
 *.pt
+!runs/marineguard_full_512_b16-2/weights/best.pt
+!runs/marineguard_v2_final/weights/best.pt
 *.onnx
 
 # Logs
@@ -40,5 +51,3 @@ runs/
 # OS
 .DS_Store
 Thumbs.db
-# V2 processed/generated dataset
-data/processed_v2/

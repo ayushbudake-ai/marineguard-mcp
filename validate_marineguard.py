@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(r"data\processed\marineguard\labels")
+ROOT = Path(__file__).resolve().parent / "data" / "processed" / "marineguard" / "labels"
 
 bad = []
 total = 0
