@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from marineguard.detection.pipeline import ImageDetectionPipeline, ImageValidationError
 from marineguard.detection.detector import BaseDetector, YOLODetector
+from marineguard.detection.side_scan import SideScanDetector
 from marineguard.detection.model_loader import ModelNotFoundError, MarineDebrisModel
 
 app = FastAPI(
@@ -130,6 +131,54 @@ async def detect_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Inference error: {str(exc)}",
+        )
+
+
+@app.post("/detect/side-scan", status_code=status.HTTP_200_OK)
+async def detect_side_scan_waterfall_api(
+    file: UploadFile = File(..., description="Side-scan sonar waterfall image file (PNG, JPG, BMP, TIFF)"),
+    confidence: Optional[float] = Query(default=None, ge=0.0, le=1.0, description="Optional confidence threshold override"),
+    cfar_pfa: Optional[float] = Query(default=1e-4, ge=1e-8, le=0.1, description="CFAR Probability of False Alarm"),
+) -> Dict[str, Any]:
+    """Accepts an uploaded side-scan sonar waterfall image and returns CA-CFAR acoustic anomaly detections."""
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must have a valid filename.",
+        )
+
+    try:
+        content = await file.read()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read uploaded file: {exc}",
+        )
+
+    if not content or len(content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty (0 bytes).",
+        )
+
+    detector = SideScanDetector()
+    try:
+        result = detector.detect_waterfall(
+            content,
+            confidence_threshold=confidence,
+            cfar_pfa=cfar_pfa,
+        )
+        return result.to_api_dict()
+
+    except ImageValidationError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid waterfall image: {str(val_err)}",
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Side-scan inference error: {str(exc)}",
         )
 
 

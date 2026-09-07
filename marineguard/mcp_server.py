@@ -133,6 +133,78 @@ class MarineGuardMCPServer:
                 "count": 0,
             }
 
+    def detect_side_scan_waterfall(
+        self,
+        waterfall_input: Union[str, bytes, bytearray, np.ndarray],
+        confidence_threshold: Optional[float] = None,
+        cfar_pfa: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """MCP Tool: detect_side_scan_waterfall
+
+        Runs CA-CFAR acoustic anomaly detection on a side-scan sonar waterfall image or matrix.
+        Returns canonical structured detection results.
+
+        Args:
+            waterfall_input: Image file path, raw bytes, base64 string, or 2D NumPy array.
+            confidence_threshold: Optional confidence threshold override.
+            cfar_pfa: Optional CA-CFAR probability of false alarm override.
+
+        Returns:
+            Dict containing structured detection results or explicit error details.
+        """
+        raw_input: Union[str, bytes, np.ndarray] = waterfall_input
+        if isinstance(waterfall_input, str) and not Path(waterfall_input).exists():
+            try:
+                if "," in waterfall_input:
+                    waterfall_input = waterfall_input.split(",", 1)[1]
+                raw_input = base64.b64decode(waterfall_input)
+            except Exception:
+                raw_input = waterfall_input
+
+        detector = SideScanDetector()
+        try:
+            result = detector.detect_waterfall(
+                raw_input,
+                confidence_threshold=confidence_threshold,
+                cfar_pfa=cfar_pfa,
+            )
+
+            self.tracer.log(
+                stage="MCP_SIDE_SCAN_DETECTION",
+                input_summary=f"Side-scan waterfall anomaly detection requested ({type(waterfall_input).__name__})",
+                output_summary=f"Extracted {result.count} acoustic candidate anomalies",
+                model=result.model_name or "SideScanDetector(CA-CFAR)",
+                confidence=float(result.detections[0].confidence) if result.detections else 1.0,
+                reasoning=f"Processed waterfall matrix {result.image_width}x{result.image_height} in {result.inference_time_ms or 0:.1f}ms",
+            )
+
+            return {
+                "status": "SUCCESS",
+                "count": result.count,
+                "detections": [d.to_dict() for d in result.detections],
+                "image_width": result.image_width,
+                "image_height": result.image_height,
+                "inference_time_ms": result.inference_time_ms,
+                "model_name": result.model_name,
+            }
+
+        except ImageValidationError as val_err:
+            return {
+                "status": "ERROR",
+                "error_type": "INVALID_IMAGE",
+                "message": str(val_err),
+                "detections": [],
+                "count": 0,
+            }
+        except Exception as exc:
+            return {
+                "status": "ERROR",
+                "error_type": "INFERENCE_ERROR",
+                "message": str(exc),
+                "detections": [],
+                "count": 0,
+            }
+
     def marine_debris_survey(self, platform: str, survey_area: Dict[str, Any], objectives: List[str]) -> Dict[str, Any]:
         """Executes full autonomous survey pipeline."""
         harness = FrameReplayHarness()
