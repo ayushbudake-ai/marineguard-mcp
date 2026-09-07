@@ -1,12 +1,12 @@
 # MarineGuard MCP — Role 2: YOLOv8n-Seg ONNX Export & PyTorch-vs-ONNX Verification Report
 
-**Document Date**: 2026-09-07  
-**Author**: Role 2 AI Inference & Integration Lead  
-**Status**: **VERIFIED WITH MINOR NUMERICAL DIFFERENCES**  
-**Source Checkpoint**: 
-uns/seaclear_yolov8n_seg/train/weights/best.pt  
-**ONNX Artifact**: 
-uns/seaclear_yolov8n_seg/onnx/best.onnx  
+**Document Date**: 2026-09-07
+**Author**: Role 2 AI Inference & Integration Lead
+**Status**: **VERIFIED WITH MINOR NUMERICAL DIFFERENCES**
+**Source Checkpoint**:
+uns/seaclear_yolov8n_seg/train/weights/best.pt
+**ONNX Artifact**:
+uns/seaclear_yolov8n_seg/onnx/best.onnx
 
 ---
 
@@ -101,9 +101,9 @@ Inference was executed on a representative sample of validation images from data
 | **1019.jpg** | 2 (metal-wreckage, metal-wreckage) | 2 (metal-wreckage, metal-wreckage) | **100% Match** | .36 \times 10^{-6}$ | .0007\text{ px}$ | **100% Match** |
 | **1037.jpg** | 9 (mixed classes) | 9 (mixed classes) | **100% Match** | .83 \times 10^{-6}$ | .0004\text{ px}$ | **100% Match** |
 | **1043.jpg** | 4 (
-ope, shell, 
+ope, shell,
 ope, shell) | 4 (
-ope, shell, 
+ope, shell,
 ope, shell) | **100% Match** | .23 \times 10^{-6}$ | .0007\text{ px}$ | **100% Match** |
 
 ### Detailed Metric Findings:
@@ -128,7 +128,7 @@ uns/seaclear_yolov8n_seg/onnx/best.onnx) achieves exceptional floating-point fid
 
 The following integration steps are identified for subsequent execution:
 
-1. **Optical Inference Pipeline Integration**: Wire 
+1. **Optical Inference Pipeline Integration**: Wire
 uns/seaclear_yolov8n_seg/onnx/best.onnx into marineguard/detection/ / optical.py for ONNX Runtime acceleration.
 2. **Multimodal Fusion Calibration**: Ingest real ONNX segmentation masks into usion.py to evaluate spatial IoU against acoustic detections.
 3. **End-to-End System Benchmark**: Validate full multimodal pipeline throughput and latency with ONNX Runtime.
