@@ -1,3 +1,9 @@
 data/raw/seaclear/yolo/** filter=lfs diff=lfs merge=lfs -text
 runs/marineguard_full_512_b16-2/weights/best.pt filter=lfs diff=lfs merge=lfs -text
 runs/marineguard_v2_final/weights/best.pt filter=lfs diff=lfs merge=lfs -text
+data/processed/marineguard_sss/images/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+data/processed/marineguard_sss/images/**/*.png filter=lfs diff=lfs merge=lfs -text
+runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.pt filter=lfs diff=lfs merge=lfs -text
+runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/best.pt filter=lfs diff=lfs merge=lfs -text
+runs/seaclear_yolov8n_seg/train/weights/best.pt filter=lfs diff=lfs merge=lfs -text
+runs/seaclear_yolov8n_seg/onnx/best.onnx filter=lfs diff=lfs merge=lfs -text

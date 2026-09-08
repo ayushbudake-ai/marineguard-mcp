@@ -1,4 +1,4 @@
-﻿import json
+import json
 from pathlib import Path
 
 from jsonschema import validate
@@ -11,9 +11,10 @@ def test_v1_detection_contract():
         Path("docs/DETECTION_SCHEMA.json").read_text(encoding="utf-8-sig")
     )
 
-    test_image = next(
-        Path("data/processed/marineguard/images/test").glob("*")
-    )
+    test_images = list(Path("data/processed/marineguard/images/test").glob("*"))
+    if not test_images:
+        test_images = list(Path("data/processed/fls/images/test").glob("*.png")) or list(Path("data/processed/seaclear_segmentation/images/test").glob("*.jpg"))
+    test_image = test_images[0]
 
     detector = MarineGuardV1Detector()
     output = detector.predict(test_image, confidence=0.25)

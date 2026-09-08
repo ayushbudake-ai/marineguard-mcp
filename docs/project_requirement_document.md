@@ -53,7 +53,7 @@ Per architectural review and `rules.md §1 & §5`, the following components from
 | ID | Requirement Statement | Status in Repository |
 |:---|:---|:---|
 | **FR1** | System shall accept uploaded raw sonar images and survey logs as primary input. | Planned (Streamlit upload flow refactor) |
-| **FR2** | System shall run a detection/segmentation model on the input to generate bounding boxes or masks. | Partially Implemented (CA-CFAR heuristic & synthetic metadata; YOLOv8-seg ONNX planned) |
+| **FR2** | System shall run a detection/segmentation model on the input to generate bounding boxes or masks. | Implemented (CA-CFAR heuristic & YOLOv8 ONNX integration complete) |
 | **FR3** | System shall assign a calibrated confidence score (0–100%) to each detected contact. | Partially Implemented (Late-fusion heuristic; Platt calibration planned) |
 | **FR4** | System shall filter false positives arising from rocks and acoustic shadows using geometric heuristics. | Partially Implemented (Aspect-ratio & shadow heuristic planned in Phase 2) |
 | **FR5** | System shall parse sonar metadata / navigation ping headers to geotag each contact with latitude and longitude. | Partially Implemented (Mock coordinates in harness; ping header parser planned) |
@@ -67,7 +67,7 @@ Per architectural review and `rules.md §1 & §5`, the following components from
 
 | ID | Requirement Statement | Target | Repository Reality |
 |:---|:---|:---|:---|
-| **NFR1** | **Edge Optimization:** Model exported to lightweight runtime (ONNX) without mandatory cloud dependencies. | ONNX / TensorRT on NVIDIA Jetson | Target specified; ONNX export planned in Phase 2. |
+| **NFR1** | **Edge Optimization:** Model exported to lightweight runtime (ONNX) without mandatory cloud dependencies. | ONNX / TensorRT on NVIDIA Jetson | Target specified; ONNX export implemented. |
 | **NFR2** | **Inference Latency:** Processing latency per sonar ping/waterfall frame. | $\le 200\text{ ms}$ per ping | Synthetic pipeline runs in $<15\text{ ms}$; real ONNX target is $\le 200\text{ ms}$. |
 | **NFR3** | **Detection Performance (Ghost Nets):** F1-score on held-out test benchmarks. | $\text{F1} \ge 0.85$ | Target benchmark; to be evaluated against real sonar datasets. |
 | **NFR4** | **False Positive Rate:** Maximum false alarm rate on natural seafloor features. | $\text{FPR} < 5.0\%$ | Target benchmark; enforced via shadow/aspect-ratio filters. |

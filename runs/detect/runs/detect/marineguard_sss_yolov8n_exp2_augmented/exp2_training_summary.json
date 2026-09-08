@@ -1,0 +1,62 @@
+{
+  "experiment": 2,
+  "name": "marineguard_sss_yolov8n_exp2_augmented",
+  "preflight": {
+    "python": "3.14.5",
+    "torch": "2.14.0+cu126",
+    "ultralytics": "8.4.143",
+    "cuda_available": true,
+    "cuda_device_count": 1,
+    "gpu": "NVIDIA GeForce RTX 3050",
+    "data_yaml": "data/processed/marineguard_sss/data.yaml",
+    "nc": 1,
+    "names": {
+      "0": "net"
+    },
+    "counts": {
+      "train_images": 1400,
+      "train_labels": 1400,
+      "val_images": 190,
+      "val_labels": 190,
+      "test_images": 190,
+      "test_labels": 190
+    },
+    "exp1_best_exists": true,
+    "exp1_last_exists": true,
+    "exp1_best_md5_before": "41726e8ea5a2f13b251a612927e65f4b",
+    "exp1_best_size_before": 6251050,
+    "yolov8n_pt": true,
+    "init_weights": "yolov8n.pt",
+    "not_finetuning_exp1": true
+  },
+  "batch": 16,
+  "batch_reduced_to_8": false,
+  "training_time_s": 16338.144754599998,
+  "peak_vram_gb": 1.813,
+  "save_dir": "runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented",
+  "best_pt": "runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/best.pt",
+  "last_pt": "runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/last.pt",
+  "best_epoch": 66,
+  "ckpt_epoch_raw": -1,
+  "standalone_val_best": {
+    "precision": 0.9986996308763886,
+    "recall": 1.0,
+    "f1": 0.999349392423192,
+    "map50": 0.995,
+    "map50_95": 0.9374438896997667
+  },
+  "best_epoch_train_box": 0.29642,
+  "best_epoch_train_cls": 0.17938,
+  "best_epoch_train_dfl": 0.78019,
+  "best_epoch_val_box": 0.25523,
+  "best_epoch_val_cls": 0.16785,
+  "best_epoch_val_dfl": 0.5316,
+  "last_epoch_map50_95": 0.92643,
+  "best_csv_map50_95": 0.93714,
+  "epochs_completed": 75,
+  "nan_losses": false,
+  "oom_unrecovered": false,
+  "exp1_best_md5_after": "41726e8ea5a2f13b251a612927e65f4b",
+  "exp1_untouched": true,
+  "timestamp_utc": "2026-09-08T02:06:43.818923+00:00"
+}

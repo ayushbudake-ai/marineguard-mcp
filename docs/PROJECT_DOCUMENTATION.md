@@ -588,7 +588,7 @@ In compliance with `rules.md §3 & §9`, this matrix provides an unvarnished aud
 
 | System Subsystem | Documentation Claim | Verifiable Codebase Reality | Classification | Required Phase Action |
 |:---|:---|:---|:---|:---|
-| **YOLOv8-seg / U-Net Inference** | Production ONNX model with sub-200ms latency | `side_scan.py` implements 1D CA-CFAR heuristic; no `.onnx` files exist in repo | **Planned** | Train model on public datasets & export to ONNX in Phase 1–2 |
+| **YOLOv8 Inference** | Production ONNX model with sub-200ms latency | `side_scan.py` integrates SSS YOLO and CA-CFAR; `.onnx` files exist in repo | **IMPLEMENTED** | SSS YOLO model integrated with ONNX runtime support |
 | **Acoustic Preprocessing** | Lee speckle filtering & resolution normalization | Raw simulated numpy arrays injected directly into CFAR detector | **Planned** | Implement OpenCV/NumPy preprocessing pipeline in Phase 1 |
 | **Statistical Calibration** | Platt / isotonic score calibration | Fixed threshold ($0.50$) and late-fusion weight averaging | **Partially Implemented** | Add Platt calibration module against validation split in Phase 2 |
 | **False-Positive Suppression** | Acoustic shadow-ratio & silhouette aspect heuristics | Prototype relies on mock `shadow_ratio` metadata field | **Partially Implemented** | Implement physical shadow contour ratio verification in Phase 2 |

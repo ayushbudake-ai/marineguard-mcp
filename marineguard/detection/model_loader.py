@@ -27,7 +27,7 @@ DEFAULT_CLASSES_PATH = REPO_ROOT / "marineguard_classes.yaml"
 
 
 class ModelNotFoundError(FileNotFoundError):
-    """Raised when production model weights (e.g. models/best.pt or ONNX export) are missing."""
+    """Raised when production model weights are missing."""
     pass
 
 
@@ -60,40 +60,68 @@ class MarineDebrisModel:
                 with open(self.classes_path, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f) or {}
                     raw_classes = data.get("classes", {})
-                    # Ensure keys are integer class IDs
-                    self.class_names = {int(k): str(v) for k, v in raw_classes.items()}
+                    self.class_names = {
+                        int(k): str(v)
+                        for k, v in raw_classes.items()
+                    }
             except Exception as exc:
-                print(f"[model_loader] Warning: Failed to parse taxonomy at {self.classes_path}: {exc}")
+                print(
+                    f"[model_loader] Warning: Failed to parse taxonomy "
+                    f"at {self.classes_path}: {exc}"
+                )
                 self.class_names = {}
+
         return self.class_names
 
     def load_weights(self) -> bool:
-        """Attempts to load the YOLO model or ONNX runtime session if weights exist on disk."""
+        """Attempts to load the YOLO model or ONNX export."""
         if self.model_path.exists():
             try:
                 from ultralytics import YOLO
-                if str(self.model_path).lower().endswith(".onnx"):
-                    self.model = YOLO(str(self.model_path), task="segment")
-                else:
-                    self.model = YOLO(str(self.model_path))
+
+                # Let Ultralytics infer the model task from the model itself.
+                # This supports both detection and segmentation ONNX models.
+                self.model = YOLO(str(self.model_path))
+
                 return True
+
             except Exception as exc:
-                print(f"[model_loader] Found {self.model_path} but failed to load it: {exc}")
+                print(
+                    f"[model_loader] Found {self.model_path} "
+                    f"but failed to load it: {exc}"
+                )
                 self.model = None
                 return False
+
         self.model = None
         return False
 
     @classmethod
-    def get(cls, model_path: Optional[Union[str, Path]] = None, confidence_threshold: float = 0.50, **kwargs) -> "MarineDebrisModel":
-        """Process-wide singleton / keyed instance so detectors share the loaded weights."""
+    def get(
+        cls,
+        model_path: Optional[Union[str, Path]] = None,
+        confidence_threshold: float = 0.50,
+        **kwargs
+    ) -> "MarineDebrisModel":
+        """Process-wide singleton/keyed instance."""
         with cls._lock:
-            key = f"{str(model_path) if model_path is not None else 'default'}_{confidence_threshold}"
+            key = (
+                f"{str(model_path) if model_path is not None else 'default'}"
+                f"_{confidence_threshold}"
+            )
+
             if key not in cls._instances:
-                instance = cls(model_path=model_path, confidence_threshold=confidence_threshold, **kwargs)
+                instance = cls(
+                    model_path=model_path,
+                    confidence_threshold=confidence_threshold,
+                    **kwargs
+                )
+
                 cls._instances[key] = instance
+
                 if cls._instance is None:
                     cls._instance = instance
+
             return cls._instances[key]
 
     @classmethod
@@ -105,53 +133,93 @@ class MarineDebrisModel:
 
     @property
     def is_loaded(self) -> bool:
-        """Returns True only when the real model weights are loaded in memory."""
+        """Returns True only when the real model weights are loaded."""
         return self.model is not None
 
-    def predict(self, image: Any) -> List[Dict[str, Any]]:
-        """Runs inference on an image input (numpy array, PIL image, or path).
+    def predict(
+        self,
+        image: Any,
+        imgsz: int = 512,
+        device: Optional[Union[str, int]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Runs inference on an image input.
+
+        Args:
+            image: NumPy array, PIL image, or image path.
+            imgsz: Inference image size. Existing callers default to 512.
+            device: Optional inference device such as 'cpu', 0, or 'cuda:0'.
 
         Returns:
-            List[Dict[str, Any]]: List of detection dicts:
-                {
-                    "class_name": str,
-                    "class_id": int,
-                    "confidence": float,
-                    "bbox": (x1, y1, x2, y2),
-                    "segmentation": Optional[List[List[float]]]
-                }
+            List of detection dictionaries containing:
+                - class_name
+                - class_id
+                - confidence
+                - bbox
+                - optional segmentation
 
         Raises:
             ModelNotFoundError: If production model is not loaded.
         """
+
         if self.model is None:
             raise ModelNotFoundError(
                 f"Trained model not found at {self.model_path}. "
-                f"Please ensure best.onnx or best.pt is placed in expected directories."
+                f"Please ensure best.onnx or best.pt is placed "
+                f"in expected directories."
             )
 
-        results = self.model.predict(image, imgsz=512, rect=False, conf=self.confidence_threshold, verbose=False)
+        predict_kwargs = {
+            "imgsz": imgsz,
+            "rect": False,
+            "conf": self.confidence_threshold,
+            "verbose": False,
+        }
+
+        if device is not None:
+            predict_kwargs["device"] = device
+
+        results = self.model.predict(
+            image,
+            **predict_kwargs
+        )
+
         detections = []
+
         for r in results:
             if r.boxes is None:
                 continue
+
             for i, box in enumerate(r.boxes):
                 cls_id = int(box.cls.item())
-                class_name = self.class_names.get(cls_id, f"class_{cls_id}")
+
+                class_name = self.class_names.get(
+                    cls_id,
+                    f"class_{cls_id}"
+                )
+
                 det: Dict[str, Any] = {
                     "class_name": class_name,
                     "class_id": cls_id,
                     "confidence": float(box.conf.item()),
                     "bbox": tuple(box.xyxy[0].tolist()),
                 }
-                # Optional segmentation polygons if available
+
+                # Optional segmentation polygons if available.
                 if getattr(r, "masks", None) is not None and r.masks is not None:
                     try:
-                        if hasattr(r.masks, "xy") and r.masks.xy is not None and i < len(r.masks.xy):
+                        if (
+                            hasattr(r.masks, "xy")
+                            and r.masks.xy is not None
+                            and i < len(r.masks.xy)
+                        ):
                             poly = r.masks.xy[i].tolist()
+
                             if poly and len(poly) >= 3:
                                 det["segmentation"] = poly
+
                     except Exception:
                         pass
+
                 detections.append(det)
+
         return detections

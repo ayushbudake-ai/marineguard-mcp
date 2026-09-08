@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 import jsonschema
 
@@ -17,6 +17,16 @@ TEST_IMAGE = (
     / "test"
     / "v1_fls_marine-debris-aris3k-1008.png"
 )
+if not TEST_IMAGE.exists():
+    TEST_IMAGE = (
+        ROOT
+        / "data"
+        / "processed"
+        / "fls"
+        / "images"
+        / "test"
+        / "marine-debris-aris3k-1008.png"
+    )
 
 
 def test_v2_detection_contract():
