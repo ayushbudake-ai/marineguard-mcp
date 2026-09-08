@@ -35,7 +35,8 @@ def test_optical_onnx_model_loading():
 
 def test_optical_onnx_valid_image_inference():
     test_img_path = VAL_IMG_DIR / '1009.jpg'
-    assert test_img_path.exists(), f'Missing test image {test_img_path}'
+    if not test_img_path.exists():
+        pytest.skip(f'Missing test image {test_img_path}')
     optical_detector = OpticalDetector(model_path=ONNX_PATH, confidence_threshold=0.25)
     assert optical_detector.is_model_loaded is True
     result = optical_detector.detect_image(test_img_path)
@@ -117,6 +118,8 @@ def test_optical_onnx_pytorch_consistency():
 
 def test_optical_onnx_annotation_with_segmentation():
     test_img_path = VAL_IMG_DIR / '1009.jpg'
+    if not test_img_path.exists():
+        pytest.skip(f'Missing test image {test_img_path}')
     optical_detector = OpticalDetector(model_path=ONNX_PATH, confidence_threshold=0.25)
     result = optical_detector.detect_image(test_img_path)
     annotator = ImageAnnotator()

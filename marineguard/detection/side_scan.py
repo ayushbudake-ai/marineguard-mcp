@@ -41,13 +41,30 @@ class SideScanDetector(BaseDetector):
 
     Taxonomy:
         - CA-CFAR emits class 'unknown-object' (class_id=27 from official marineguard_classes.yaml)
+          for class-agnostic acoustic anomalies.
         - SSS specialist model emits class 'net' (class_id=29 from official marineguard_classes.yaml)
+          when use_sss_model=True or when loaded via with_sss_model().
+          Maps SSS native class 0 to MarineGuard class 29 ("net")
+          per the official taxonomy contract.
     """
 
     UNKNOWN_CLASS_NAME = "unknown-object"
     UNKNOWN_CLASS_ID = 27
     SSS_CLASS_NAME = "net"
     SSS_CLASS_ID = 29
+
+    # SSS YOLO class mapping: native SSS class 0 → MarineGuard class 29 "net"
+    # Source: AGENTS.md section 6 (Official Taxonomy), section 15 (SSS Class Mapping)
+    # NEVER map SSS net to class 27 (unknown-object).
+    SSS_CLASS_MAP: Dict[int, int] = {
+        0: 29,
+    }
+
+    SSS_CLASS_NAMES: Dict[int, str] = {
+        29: "net",
+    }
+
+    SSS_IMAGE_SIZE: int = 640
 
     def __init__(
         self,
@@ -57,6 +74,7 @@ class SideScanDetector(BaseDetector):
         min_dim: int = 4,
         model: Optional[MarineDebrisModel] = None,
         model_path: Optional[Union[str, Path]] = None,
+        use_sss_model: bool = False,
     ):
         self.cfar_pfa = cfar_pfa
         self.confidence_threshold = confidence_threshold
@@ -71,6 +89,7 @@ class SideScanDetector(BaseDetector):
             )
         else:
             self.model = MarineDebrisModel.get(confidence_threshold=confidence_threshold)
+        self.use_sss_model = use_sss_model
 
     @classmethod
     def with_sss_model(
@@ -105,6 +124,7 @@ class SideScanDetector(BaseDetector):
             min_area=min_area,
             min_dim=min_dim,
             model=model,
+            use_sss_model=True,
         )
 
     @property
@@ -497,6 +517,7 @@ class SideScanDetector(BaseDetector):
         confidence_threshold: Optional[float] = None,
         cfar_pfa: Optional[float] = None,
         use_ml: bool = False,
+        use_sss_model: Optional[bool] = None,
     ) -> DetectionResult:
         """Executes acoustic anomaly detection on a side-scan sonar waterfall image/matrix.
 
@@ -506,6 +527,16 @@ class SideScanDetector(BaseDetector):
             cfar_pfa: Probability of false alarm for CA-CFAR (when use_ml=False).
             use_ml: If True, uses the dedicated SSS specialist model; if False, uses CA-CFAR.
 
+        When use_sss_model is True (or set at construction time), routes through the SSS YOLO
+        inference path and maps native SSS class 0 to MarineGuard class 29 ("net").
+
+        When use_sss_model is False (default), uses the CA-CFAR path and emits
+        class 27 ("unknown-object") for acoustic anomalies.
+
+        Raises:
+            ImageValidationError: If input fails validation (empty, NaN, Inf, wrong shape, etc.)
+            RuntimeError: If SSS model is selected but not loaded.
+
         Returns:
             DetectionResult: Structured container of canonical Detection objects.
         """
@@ -513,14 +544,74 @@ class SideScanDetector(BaseDetector):
             return self.detect_sss(image_input, confidence_threshold=confidence_threshold)
 
         start_time = time.perf_counter()
+
         mat_f, width, height = self.validate_and_normalize_matrix(image_input)
 
+        if use_sss_model is True:
+            if self.model is None or not self.model.is_loaded:
+                raise RuntimeError("SSS model is not loaded")
+
+            # Convert 2D grayscale matrix to 3-channel RGB-like array for YOLO
+            model_image = np.stack(
+                [mat_f, mat_f, mat_f],
+                axis=-1,
+            )
+
+            raw_detections = self.model.predict(
+                model_image,
+                imgsz=self.SSS_IMAGE_SIZE,
+            )
+
+            detections: List[Detection] = []
+
+            for raw in raw_detections:
+                native_class_id = int(raw.get("class_id", -1))
+
+                # Only accept classes that have a mapping in the SSS class map
+                if native_class_id not in self.SSS_CLASS_MAP:
+                    continue
+
+                marineguard_class_id = self.SSS_CLASS_MAP[native_class_id]
+                class_name = self.SSS_CLASS_NAMES[marineguard_class_id]
+
+                bbox = raw.get("bbox")
+                confidence = float(raw.get("confidence", 0.0))
+
+                if bbox is None or len(bbox) != 4:
+                    continue
+
+                detections.append(
+                    Detection(
+                        class_name=class_name,
+                        class_id=marineguard_class_id,
+                        confidence=confidence,
+                        bbox=[float(v) for v in bbox],
+                        metadata={
+                            "sensor": "side_scan",
+                            "method": "SSS-YOLO",
+                            "native_class_id": native_class_id,
+                        },
+                    )
+                )
+
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+            return DetectionResult.from_detections(
+                detections=detections,
+                image_width=width,
+                image_height=height,
+                inference_time_ms=latency_ms,
+                model_name=self.model_name,
+                status="ok",
+            )
+
+        # CA-CFAR path (default)
         conf_thresh = confidence_threshold if confidence_threshold is not None else self.confidence_threshold
         candidates = self.cfar_detect_2d(mat_f, cfar_pfa=cfar_pfa, confidence_threshold=conf_thresh)
 
-        detections: List[Detection] = []
+        detections_cfar: List[Detection] = []
         for cand in candidates:
-            detections.append(
+            detections_cfar.append(
                 Detection(
                     class_name=self.UNKNOWN_CLASS_NAME,
                     class_id=self.UNKNOWN_CLASS_ID,
@@ -539,7 +630,7 @@ class SideScanDetector(BaseDetector):
         latency_ms = (time.perf_counter() - start_time) * 1000.0
 
         return DetectionResult.from_detections(
-            detections=detections,
+            detections=detections_cfar,
             image_width=width,
             image_height=height,
             inference_time_ms=latency_ms,
@@ -547,10 +638,24 @@ class SideScanDetector(BaseDetector):
         )
 
     def detect(self, image: np.ndarray) -> DetectionResult:
-        """BaseDetector interface implementation."""
-        if self.is_model_loaded:
-            return self.detect_sss(image)
-        return self.detect_waterfall(image)
+        """BaseDetector interface implementation.
+
+        When use_sss_model=True, routes through the SSS YOLO path.
+        Otherwise uses CA-CFAR.
+
+        Catches ImageValidationError and converts it to an error DetectionResult
+        so callers can inspect result.status without catching exceptions.
+
+        For production use that requires explicit error propagation, call
+        detect_waterfall() or detect_sss() directly.
+        """
+        try:
+            return self.detect_waterfall(image, use_sss_model=self.use_sss_model)
+        except ImageValidationError as exc:
+            return DetectionResult.from_detections(
+                detections=[],
+                status=f"error: {exc}",
+            )
 
     def process_waterfall_ping(
         self,

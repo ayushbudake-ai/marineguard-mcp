@@ -6,6 +6,7 @@ import base64
 import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
+import numpy as np
 from marineguard.schemas import PlatformSpec, Action, MissionContext, SurveyJob
 from marineguard.compiler.sensor_parser import SensorParser
 from marineguard.compiler.mcp_emitter import MCPEmitter

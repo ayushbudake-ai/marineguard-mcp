@@ -127,8 +127,18 @@ class MarineDebrisModel:
         """Returns True only when the real model weights are loaded in memory."""
         return self.model is not None
 
-    def predict(self, image: Any) -> List[Dict[str, Any]]:
+    def predict(
+        self,
+        image: Any,
+        imgsz: int = 512,
+        device: Optional[Union[int, str]] = None,
+    ) -> List[Dict[str, Any]]:
         """Runs inference on an image input (numpy array, PIL image, or path).
+
+        Args:
+            image: Input image (numpy array, PIL image, file path, or bytes).
+            imgsz: Input image size for the model (default: 512).
+            device: Compute device override. ONNX always uses CPU regardless.
 
         Returns:
             List[Dict[str, Any]]: List of detection dicts:
@@ -152,20 +162,22 @@ class MarineDebrisModel:
         if self.model_path.suffix.lower() == ".onnx":
             results = self.model.predict(
                 image,
-                imgsz=512,
+                imgsz=imgsz,
                 rect=False,
                 conf=self.confidence_threshold,
                 device="cpu",
                 verbose=False,
             )
         else:
-            results = self.model.predict(
-                image,
-                imgsz=512,
-                rect=False,
-                conf=self.confidence_threshold,
-                verbose=False,
-            )
+            predict_kwargs = {
+                "imgsz": imgsz,
+                "rect": False,
+                "conf": self.confidence_threshold,
+                "verbose": False,
+            }
+            if device is not None:
+                predict_kwargs["device"] = device
+            results = self.model.predict(image, **predict_kwargs)
         detections = []
         for r in results:
             if r.boxes is None:
