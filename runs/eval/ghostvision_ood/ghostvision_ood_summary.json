@@ -1,0 +1,67 @@
+{
+  "model_checkpoint": "runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.pt",
+  "conf_threshold": 0.25,
+  "total_images_evaluated": 6674,
+  "images_with_fp_net_detection": 36,
+  "fp_image_rate_pct": 0.5394066526820497,
+  "clean_images_zero_detection": 6638,
+  "clean_image_rate_pct": 99.46059334731795,
+  "total_predicted_net_detections": 40,
+  "detections_per_image_mean": 0.005993407252022775,
+  "conf_distribution": {
+    "min": 0.2520328760147095,
+    "mean": 0.40466650053858755,
+    "median": 0.33198530972003937,
+    "max": 0.8807897567749023,
+    "p25": 0.28449221700429916,
+    "p75": 0.48080868273973465,
+    "p90": 0.6255000472068788
+  },
+  "per_split": {
+    "test": {
+      "total_images": 398,
+      "images_with_detections": 6,
+      "clean_images": 392,
+      "total_detections": 8,
+      "detection_rate_pct": 1.507537688442211,
+      "clean_rate_pct": 98.49246231155779,
+      "conf_min": 0.2653065323829651,
+      "conf_mean": 0.5600150898098946,
+      "conf_median": 0.5601217746734619,
+      "conf_max": 0.8807897567749023,
+      "duration_s": 5.435066223144531,
+      "latency_ms_per_img": 13.655945284282742
+    },
+    "valid": {
+      "total_images": 555,
+      "images_with_detections": 0,
+      "clean_images": 555,
+      "total_detections": 0,
+      "detection_rate_pct": 0.0,
+      "clean_rate_pct": 100.0,
+      "conf_min": 0.0,
+      "conf_mean": 0.0,
+      "conf_median": 0.0,
+      "conf_max": 0.0,
+      "duration_s": 5.22541880607605,
+      "latency_ms_per_img": 9.415169019956846
+    },
+    "train": {
+      "total_images": 5721,
+      "images_with_detections": 30,
+      "clean_images": 5691,
+      "total_detections": 32,
+      "detection_rate_pct": 0.5243838489774515,
+      "clean_rate_pct": 99.47561615102255,
+      "conf_min": 0.2520328760147095,
+      "conf_mean": 0.3658293532207608,
+      "conf_median": 0.3237246423959732,
+      "conf_max": 0.7200266718864441,
+      "duration_s": 54.318190813064575,
+      "latency_ms_per_img": 9.49452732268215
+    }
+  },
+  "total_eval_time_s": 65.02503228187561,
+  "overall_latency_ms_per_image": 9.743037501030209,
+  "artifacts_saved_dir": "runs/eval/ghostvision_ood"
+}

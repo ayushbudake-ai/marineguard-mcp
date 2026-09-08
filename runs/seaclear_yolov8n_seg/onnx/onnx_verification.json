@@ -1,0 +1,364 @@
+{
+  "source_checkpoint": "d:\\Marine Drive\\marineguard-mcp\\runs\\seaclear_yolov8n_seg\\train\\weights\\best.pt",
+  "checkpoint_epoch": 48,
+  "onnx_path": "d:\\Marine Drive\\marineguard-mcp\\runs\\seaclear_yolov8n_seg\\onnx\\best.onnx",
+  "onnx_file_size_bytes": 13235431,
+  "export_configuration": {
+    "format": "onnx",
+    "imgsz": 512,
+    "batch": 1,
+    "dynamic": false,
+    "half": false,
+    "device": "cpu",
+    "simplify": false,
+    "opset": 18
+  },
+  "environment": {
+    "torch_version": "2.14.0+cpu",
+    "ultralytics_version": "8.4.142",
+    "onnx_version": "1.22.0",
+    "onnxruntime_version": "1.29.0",
+    "execution_provider": "CPUExecutionProvider"
+  },
+  "onnx_model_io": {
+    "inputs": [
+      {
+        "name": "images",
+        "shape": [
+          1,
+          3,
+          512,
+          512
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "output0",
+        "shape": [
+          1,
+          86,
+          5376
+        ],
+        "type": "tensor(float)"
+      },
+      {
+        "name": "output1",
+        "shape": [
+          1,
+          32,
+          128,
+          128
+        ],
+        "type": "tensor(float)"
+      }
+    ]
+  },
+  "raw_tensor_parity": [
+    {
+      "output_index": 0,
+      "name": "output0",
+      "shape": [
+        1,
+        86,
+        5376
+      ],
+      "max_difference": 0.00152588,
+      "mean_difference": 2.47e-06
+    },
+    {
+      "output_index": 1,
+      "name": "output1",
+      "shape": [
+        1,
+        32,
+        128,
+        128
+      ],
+      "max_difference": 1.645e-05,
+      "mean_difference": 8.6e-07
+    }
+  ],
+  "sample_comparisons": [
+    {
+      "sample_index": 1,
+      "image_name": "1009.jpg",
+      "pt_detections": 1,
+      "onnx_detections": 1,
+      "detection_count_match": true,
+      "pt_classes": [
+        23
+      ],
+      "onnx_classes": [
+        23
+      ],
+      "pt_class_names": [
+        "animal"
+      ],
+      "onnx_class_names": [
+        "animal"
+      ],
+      "class_agreement": true,
+      "pt_confidences": [
+        0.907806
+      ],
+      "onnx_confidences": [
+        0.907805
+      ],
+      "max_conf_diff": 8.3e-07,
+      "mean_conf_diff": 8.3e-07,
+      "max_box_diff_pixels": 0.0,
+      "mean_box_diff_pixels": 0.0,
+      "pt_has_masks": true,
+      "onnx_has_masks": true,
+      "mask_shape": [
+        1,
+        512,
+        512
+      ],
+      "max_mask_diff": 0.0,
+      "mean_mask_diff": 0.0,
+      "mask_agreement": true
+    },
+    {
+      "sample_index": 2,
+      "image_name": "1017.jpg",
+      "pt_detections": 2,
+      "onnx_detections": 2,
+      "detection_count_match": true,
+      "pt_classes": [
+        25,
+        23
+      ],
+      "onnx_classes": [
+        25,
+        23
+      ],
+      "pt_class_names": [
+        "glass-bottle",
+        "animal"
+      ],
+      "onnx_class_names": [
+        "glass-bottle",
+        "animal"
+      ],
+      "class_agreement": true,
+      "pt_confidences": [
+        0.735657,
+        0.530455
+      ],
+      "onnx_confidences": [
+        0.735666,
+        0.530456
+      ],
+      "max_conf_diff": 8.88e-06,
+      "mean_conf_diff": 5.16e-06,
+      "max_box_diff_pixels": 6.1e-05,
+      "mean_box_diff_pixels": 2.3e-05,
+      "pt_has_masks": true,
+      "onnx_has_masks": true,
+      "mask_shape": [
+        2,
+        512,
+        512
+      ],
+      "max_mask_diff": 0.0,
+      "mean_mask_diff": 0.0,
+      "mask_agreement": true
+    },
+    {
+      "sample_index": 3,
+      "image_name": "1019.jpg",
+      "pt_detections": 2,
+      "onnx_detections": 2,
+      "detection_count_match": true,
+      "pt_classes": [
+        26,
+        26
+      ],
+      "onnx_classes": [
+        26,
+        26
+      ],
+      "pt_class_names": [
+        "metal-wreckage",
+        "metal-wreckage"
+      ],
+      "onnx_class_names": [
+        "metal-wreckage",
+        "metal-wreckage"
+      ],
+      "class_agreement": true,
+      "pt_confidences": [
+        0.987009,
+        0.459145
+      ],
+      "onnx_confidences": [
+        0.987009,
+        0.459153
+      ],
+      "max_conf_diff": 7.36e-06,
+      "mean_conf_diff": 3.71e-06,
+      "max_box_diff_pixels": 0.000671,
+      "mean_box_diff_pixels": 0.000232,
+      "pt_has_masks": true,
+      "onnx_has_masks": true,
+      "mask_shape": [
+        2,
+        512,
+        512
+      ],
+      "max_mask_diff": 0.0,
+      "mean_mask_diff": 0.0,
+      "mask_agreement": true
+    },
+    {
+      "sample_index": 4,
+      "image_name": "1037.jpg",
+      "pt_detections": 9,
+      "onnx_detections": 9,
+      "detection_count_match": true,
+      "pt_classes": [
+        30,
+        31,
+        30,
+        0,
+        0,
+        31,
+        29,
+        31,
+        27
+      ],
+      "onnx_classes": [
+        30,
+        31,
+        30,
+        0,
+        0,
+        31,
+        29,
+        31,
+        27
+      ],
+      "pt_class_names": [
+        "shell",
+        "rope",
+        "shell",
+        "bottle",
+        "bottle",
+        "rope",
+        "net",
+        "rope",
+        "unknown-object"
+      ],
+      "onnx_class_names": [
+        "shell",
+        "rope",
+        "shell",
+        "bottle",
+        "bottle",
+        "rope",
+        "net",
+        "rope",
+        "unknown-object"
+      ],
+      "class_agreement": true,
+      "pt_confidences": [
+        0.980277,
+        0.939861,
+        0.936947,
+        0.933991,
+        0.868981,
+        0.759865,
+        0.436424,
+        0.418911,
+        0.410826
+      ],
+      "onnx_confidences": [
+        0.980277,
+        0.939861,
+        0.936948,
+        0.933991,
+        0.86898,
+        0.759865,
+        0.436421,
+        0.418914,
+        0.410825
+      ],
+      "max_conf_diff": 2.83e-06,
+      "mean_conf_diff": 9.6e-07,
+      "max_box_diff_pixels": 0.000427,
+      "mean_box_diff_pixels": 6.7e-05,
+      "pt_has_masks": true,
+      "onnx_has_masks": true,
+      "mask_shape": [
+        9,
+        512,
+        512
+      ],
+      "max_mask_diff": 0.0,
+      "mean_mask_diff": 0.0,
+      "mask_agreement": true
+    },
+    {
+      "sample_index": 5,
+      "image_name": "1043.jpg",
+      "pt_detections": 4,
+      "onnx_detections": 4,
+      "detection_count_match": true,
+      "pt_classes": [
+        31,
+        30,
+        31,
+        30
+      ],
+      "onnx_classes": [
+        31,
+        30,
+        31,
+        30
+      ],
+      "pt_class_names": [
+        "rope",
+        "shell",
+        "rope",
+        "shell"
+      ],
+      "onnx_class_names": [
+        "rope",
+        "shell",
+        "rope",
+        "shell"
+      ],
+      "class_agreement": true,
+      "pt_confidences": [
+        0.818884,
+        0.364379,
+        0.318116,
+        0.260949
+      ],
+      "onnx_confidences": [
+        0.818886,
+        0.364378,
+        0.318118,
+        0.260953
+      ],
+      "max_conf_diff": 4.23e-06,
+      "mean_conf_diff": 2.56e-06,
+      "max_box_diff_pixels": 0.000671,
+      "mean_box_diff_pixels": 0.000113,
+      "pt_has_masks": true,
+      "onnx_has_masks": true,
+      "mask_shape": [
+        4,
+        512,
+        512
+      ],
+      "max_mask_diff": 0.0,
+      "mean_mask_diff": 0.0,
+      "mask_agreement": true
+    }
+  ],
+  "overall_status": "VERIFIED WITH MINOR NUMERICAL DIFFERENCES"
+}
