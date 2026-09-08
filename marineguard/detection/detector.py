@@ -138,6 +138,7 @@ class ONNXOpticalDetector(BaseDetector):
             model_path=target_path,
             classes_path=classes_path,
             confidence_threshold=confidence_threshold,
+            task="segment",
         )
 
     @property

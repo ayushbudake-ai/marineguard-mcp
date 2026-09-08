@@ -39,7 +39,8 @@ class OpticalDetector:
             target_path = Path(model_path) if model_path is not None else default_optical_path
             self.model = MarineDebrisModel.get(
                 model_path=target_path,
-                confidence_threshold=confidence_threshold
+                confidence_threshold=confidence_threshold,
+                task="segment",
             )
 
     @property

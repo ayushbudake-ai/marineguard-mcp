@@ -14,6 +14,7 @@ Validates:
 """
 
 import io
+from pathlib import Path
 import pytest
 import numpy as np
 from PIL import Image
@@ -22,6 +23,7 @@ from fastapi.testclient import TestClient
 from marineguard.detection.side_scan import SideScanDetector
 from marineguard.detection.schema import Detection, DetectionResult
 from marineguard.detection.pipeline import ImageValidationError
+from marineguard.detection.model_loader import ModelNotFoundError
 from marineguard.schemas import DebrisContact
 from marineguard.mcp_server import MarineGuardMCPServer
 from marineguard.api.app import app
@@ -298,3 +300,181 @@ def test_api_detect_side_scan_endpoint():
             files={"file": ("empty.png", b"", "image/png")},
         )
         assert err_resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# 6. SSS Specialist ML Model Integration Tests (PyTorch & ONNX)
+# ---------------------------------------------------------------------------
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SSS_PT_PATH = REPO_ROOT / "runs" / "detect" / "runs" / "marineguard_sss_yolov8n_baseline" / "weights" / "best.pt"
+SSS_ONNX_PATH = REPO_ROOT / "runs" / "detect" / "runs" / "marineguard_sss_yolov8n_baseline" / "weights" / "best.onnx"
+SSS_VAL_IMAGE = REPO_ROOT / "data" / "processed" / "marineguard_sss" / "images" / "val" / "synth_ghost_net_00001.png"
+
+
+def test_side_scan_with_sss_model_pt_loading():
+    """Test 16: with_sss_model(use_onnx=False) loads PyTorch weights and reports ready."""
+    assert SSS_PT_PATH.exists(), f"SSS PT weights missing at {SSS_PT_PATH}"
+    detector = SideScanDetector.with_sss_model(use_onnx=False, confidence_threshold=0.50)
+    assert detector.is_ready is True
+    assert detector.is_model_loaded is True
+    assert "best.pt" in detector.model_name
+
+
+def test_side_scan_with_sss_model_onnx_loading():
+    """Test 17: with_sss_model(use_onnx=True) loads ONNX weights and reports ready."""
+    assert SSS_ONNX_PATH.exists(), f"SSS ONNX weights missing at {SSS_ONNX_PATH}"
+    detector = SideScanDetector.with_sss_model(use_onnx=True, confidence_threshold=0.50)
+    assert detector.is_ready is True
+    assert detector.is_model_loaded is True
+    assert "best.onnx" in detector.model_name
+
+
+def test_side_scan_detect_sss_valid_image_pt():
+    """Test 18: detect_sss() runs PT inference on a valid SSS image, mapping class 0 -> 29 ('net')."""
+    assert SSS_VAL_IMAGE.exists(), f"SSS test image missing at {SSS_VAL_IMAGE}"
+    detector = SideScanDetector.with_sss_model(use_onnx=False, confidence_threshold=0.25)
+    result = detector.detect_sss(SSS_VAL_IMAGE)
+
+    assert isinstance(result, DetectionResult)
+    assert result.status == "SUCCESS"
+    assert result.count >= 1
+    assert result.image_width == 640
+    assert result.image_height == 640
+    assert result.inference_time_ms is not None and result.inference_time_ms > 0
+
+    det = result.detections[0]
+    assert det.class_id == 29
+    assert det.class_name == "net"
+    assert 0.0 <= det.confidence <= 1.0
+    assert len(det.bbox) == 4
+    x1, y1, x2, y2 = det.bbox
+    assert 0 <= x1 < x2 <= result.image_width
+    assert 0 <= y1 < y2 <= result.image_height
+    assert det.metadata.get("sensor") == "side_scan"
+    assert det.metadata.get("official_class_id") == 29
+
+
+def test_side_scan_detect_sss_valid_image_onnx():
+    """Test 19: detect_sss() runs ONNX inference on a valid SSS image with class mapping 0 -> 29 ('net')."""
+    assert SSS_VAL_IMAGE.exists(), f"SSS test image missing at {SSS_VAL_IMAGE}"
+    detector = SideScanDetector.with_sss_model(use_onnx=True, confidence_threshold=0.25)
+    result = detector.detect_sss(SSS_VAL_IMAGE)
+
+    assert isinstance(result, DetectionResult)
+    assert result.status == "SUCCESS"
+    assert result.count >= 1
+    assert result.image_width == 640
+    assert result.image_height == 640
+    assert result.inference_time_ms is not None and result.inference_time_ms > 0
+
+    det = result.detections[0]
+    assert det.class_id == 29
+    assert det.class_name == "net"
+    assert 0.0 <= det.confidence <= 1.0
+    assert len(det.bbox) == 4
+    x1, y1, x2, y2 = det.bbox
+    assert 0 <= x1 < x2 <= result.image_width
+    assert 0 <= y1 < y2 <= result.image_height
+
+
+def test_side_scan_detect_waterfall_use_ml_branching():
+    """Test 20: detect_waterfall() switches cleanly between ML (use_ml=True) and CA-CFAR (use_ml=False)."""
+    assert SSS_VAL_IMAGE.exists()
+    detector = SideScanDetector.with_sss_model(confidence_threshold=0.25)
+
+    # 1. ML path (returns class 29 'net')
+    ml_result = detector.detect_waterfall(SSS_VAL_IMAGE, use_ml=True)
+    assert ml_result.count >= 1
+    assert ml_result.detections[0].class_id == 29
+    assert ml_result.detections[0].class_name == "net"
+
+    # 2. CA-CFAR path (returns class 27 'unknown-object' if anomalies found, or count 0)
+    cfar_result = detector.detect_waterfall(SSS_VAL_IMAGE, use_ml=False)
+    assert isinstance(cfar_result, DetectionResult)
+    for det in cfar_result.detections:
+        assert det.class_id == 27
+        assert det.class_name == "unknown-object"
+
+
+def test_side_scan_detect_sss_missing_model_raises():
+    """Test 21: detect_sss() raises ModelNotFoundError if model weights are not loaded."""
+    missing_path = REPO_ROOT / "models" / "definitely_missing_sss_model_99999.pt"
+    detector = SideScanDetector(model_path=missing_path)
+    assert detector.is_model_loaded is False
+
+    with pytest.raises(ModelNotFoundError) as exc_info:
+        detector.detect_sss(SSS_VAL_IMAGE)
+    assert "not available" in str(exc_info.value).lower() or "not found" in str(exc_info.value).lower()
+
+
+def test_side_scan_detect_sss_invalid_inputs():
+    """Test 22: detect_sss() validates inputs and raises ImageValidationError on invalid payloads."""
+    detector = SideScanDetector.with_sss_model(use_onnx=False)
+
+    # Empty bytes
+    with pytest.raises(ImageValidationError):
+        detector.detect_sss(b"")
+
+    # Corrupt bytes
+    with pytest.raises(ImageValidationError):
+        detector.detect_sss(b"corrupted_bytes_not_an_image")
+
+    # Non-existent file
+    with pytest.raises(ImageValidationError):
+        detector.detect_sss("non_existent_sss_file_12345.png")
+
+    # Empty numpy array
+    with pytest.raises(ImageValidationError):
+        detector.detect_sss(np.array([]))
+
+    # NaN in matrix
+    mat_nan = np.full((100, 100), 50.0, dtype=np.float32)
+    mat_nan[25, 25] = np.nan
+    with pytest.raises(ImageValidationError):
+        detector.detect_sss(mat_nan)
+
+    # Inf in matrix
+    mat_inf = np.full((100, 100), 50.0, dtype=np.float32)
+    mat_inf[30, 30] = np.inf
+    with pytest.raises(ImageValidationError):
+        detector.detect_sss(mat_inf)
+
+
+def test_side_scan_detect_sss_pil_and_numpy_inputs():
+    """Test 23: detect_sss() supports PIL Image and 2D/3D numpy inputs."""
+    detector = SideScanDetector.with_sss_model(use_onnx=False)
+
+    # PIL Image
+    pil_img = Image.open(SSS_VAL_IMAGE)
+    res_pil = detector.detect_sss(pil_img)
+    assert res_pil.status == "SUCCESS"
+    assert res_pil.count >= 1
+
+    # 3D NumPy array
+    arr_3d = np.array(pil_img)
+    res_3d = detector.detect_sss(arr_3d)
+    assert res_3d.status == "SUCCESS"
+    assert res_3d.count >= 1
+
+    # 2D NumPy array
+    arr_2d = np.array(pil_img.convert("L"))
+    res_2d = detector.detect_sss(arr_2d)
+    assert res_2d.status == "SUCCESS"
+
+
+def test_side_scan_process_waterfall_ping_ml_support():
+    """Test 24: process_waterfall_ping() supports use_ml=True with SSS specialist model."""
+    detector = SideScanDetector.with_sss_model(use_onnx=False, confidence_threshold=0.25)
+    pil_img = Image.open(SSS_VAL_IMAGE)
+    arr = np.array(pil_img)
+
+    ping_payload = {
+        "sonar_waterfall": arr,
+        "target_meta": {"id": "Ping_ML_01", "type": "net", "sonar_confidence": 0.95},
+    }
+    contacts = detector.process_waterfall_ping(ping_payload, use_ml=True)
+    assert len(contacts) >= 1
+    assert contacts[0].sensor_type == "side_scan"
+    assert contacts[0].sensor_id == "side_scan_01"
+    assert 0.0 <= contacts[0].raw_confidence <= 1.0

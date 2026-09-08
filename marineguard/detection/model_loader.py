@@ -17,6 +17,7 @@ When best.pt is absent:
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 import threading
+from ultralytics import YOLO
 import yaml
 import numpy as np
 
@@ -43,10 +44,12 @@ class MarineDebrisModel:
         model_path: Optional[Union[str, Path]] = None,
         classes_path: Optional[Union[str, Path]] = None,
         confidence_threshold: float = 0.50,
+        task: Optional[str] = None,
     ):
         self.model_path = Path(model_path) if model_path is not None else DEFAULT_MODEL_PATH
         self.classes_path = Path(classes_path) if classes_path is not None else DEFAULT_CLASSES_PATH
         self.confidence_threshold = confidence_threshold
+        self.task = task
         self.model = None
         self.class_names: Dict[int, str] = {}
 
@@ -72,8 +75,11 @@ class MarineDebrisModel:
         if self.model_path.exists():
             try:
                 from ultralytics import YOLO
-                if str(self.model_path).lower().endswith(".onnx"):
-                    self.model = YOLO(str(self.model_path), task="segment")
+                if self.model_path.suffix.lower() == ".onnx":
+                    if self.task is not None:
+                        self.model = YOLO(str(self.model_path), task=self.task)
+                    else:
+                        self.model = YOLO(str(self.model_path))
                 else:
                     self.model = YOLO(str(self.model_path))
                 return True
@@ -85,12 +91,25 @@ class MarineDebrisModel:
         return False
 
     @classmethod
-    def get(cls, model_path: Optional[Union[str, Path]] = None, confidence_threshold: float = 0.50, **kwargs) -> "MarineDebrisModel":
+    def get(
+        cls,
+        model_path: Optional[Union[str, Path]] = None,
+        confidence_threshold: float = 0.50,
+        **kwargs,
+    ) -> "MarineDebrisModel":
         """Process-wide singleton / keyed instance so detectors share the loaded weights."""
         with cls._lock:
-            key = f"{str(model_path) if model_path is not None else 'default'}_{confidence_threshold}"
+            task = kwargs.get("task")
+            key = (
+                f"{str(model_path) if model_path is not None else 'default'}"
+                f"_{confidence_threshold}_{task}"
+            )
             if key not in cls._instances:
-                instance = cls(model_path=model_path, confidence_threshold=confidence_threshold, **kwargs)
+                instance = cls(
+                    model_path=model_path,
+                    confidence_threshold=confidence_threshold,
+                    **kwargs,
+                )
                 cls._instances[key] = instance
                 if cls._instance is None:
                     cls._instance = instance
@@ -130,7 +149,23 @@ class MarineDebrisModel:
                 f"Please ensure best.onnx or best.pt is placed in expected directories."
             )
 
-        results = self.model.predict(image, imgsz=512, rect=False, conf=self.confidence_threshold, verbose=False)
+        if self.model_path.suffix.lower() == ".onnx":
+            results = self.model.predict(
+                image,
+                imgsz=512,
+                rect=False,
+                conf=self.confidence_threshold,
+                device="cpu",
+                verbose=False,
+            )
+        else:
+            results = self.model.predict(
+                image,
+                imgsz=512,
+                rect=False,
+                conf=self.confidence_threshold,
+                verbose=False,
+            )
         detections = []
         for r in results:
             if r.boxes is None:
