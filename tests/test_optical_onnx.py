@@ -15,7 +15,7 @@ from marineguard.detection.schema import DetectionResult, Detection
 from marineguard.detection.annotator import ImageAnnotator
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ONNX_PATH = REPO_ROOT / 'runs' / 'seaclear_yolov8n_seg' / 'onnx' / 'best.onnx'
+ONNX_PATH = REPO_ROOT / 'runs' / 'seaclear_yolov8n_seg' / 'train' / 'weights' / 'best.onnx'
 PT_PATH = REPO_ROOT / 'runs' / 'seaclear_yolov8n_seg' / 'train' / 'weights' / 'best.pt'
 VAL_IMG_DIR = REPO_ROOT / 'data' / 'processed' / 'seaclear_segmentation' / 'images' / 'val'
 
@@ -93,6 +93,24 @@ def test_optical_onnx_pytorch_consistency():
             continue
         pt_res = pt_pipeline.process(img_p)
         onnx_res = onnx_pipeline.process(img_p)
+        if pt_res.count != onnx_res.count:
+            print(f'\nDEBUG {img_name}')
+            print('PyTorch detections:')
+            for det in pt_res.detections:
+                print(
+                    f'  class={det.class_name} '
+                    f'id={det.class_id} '
+                    f'conf={det.confidence} '
+                    f'bbox={det.bbox}'
+                )
+            print('ONNX detections:')
+            for det in onnx_res.detections:
+                print(
+                    f'  class={det.class_name} '
+                    f'id={det.class_id} '
+                    f'conf={det.confidence} '
+                    f'bbox={det.bbox}'
+                )
         assert pt_res.count == onnx_res.count, f'Count mismatch on {img_name}'
         pt_classes = [d.class_id for d in pt_res.detections]
         onnx_classes = [d.class_id for d in onnx_res.detections]

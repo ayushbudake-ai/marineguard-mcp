@@ -23,6 +23,12 @@ from marineguard.detection.schema import Detection, DetectionResult
 from marineguard.detection.detector import BaseDetector
 from marineguard.detection.model_loader import MarineDebrisModel, ModelNotFoundError
 from marineguard.detection.pipeline import ImageValidationError
+from marineguard.detection.preprocessing import DefaultPreprocessor
+from marineguard.detection.postprocessing import PostProcessor
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SSS_PT_PATH = REPO_ROOT / "runs" / "detect" / "runs" / "marineguard_sss_yolov8n_baseline" / "weights" / "best.pt"
+DEFAULT_SSS_ONNX_PATH = REPO_ROOT / "runs" / "detect" / "runs" / "marineguard_sss_yolov8n_baseline" / "weights" / "best.onnx"
 
 
 class SideScanDetector(BaseDetector):
@@ -30,18 +36,22 @@ class SideScanDetector(BaseDetector):
 
     Executes 2D Cell-Averaging Constant False Alarm Rate (CA-CFAR) anomaly
     detection over waterfall sonar imagery, extracting acoustic highlight/shadow
-    regions into candidate bounding boxes and anomaly confidence scores.
+    regions into candidate bounding boxes and anomaly confidence scores,
+    with an integrated SSS specialist YOLO/ONNX model (mapping local class 0 -> class 29 "net").
 
     Taxonomy:
-        Emits class 'unknown-object' (class_id=27 from official marineguard_classes.yaml)
-        for class-agnostic acoustic anomalies.
-
-        When use_sss_model=True, maps SSS native class 0 to MarineGuard class 29 ("net")
-        per the official taxonomy contract in AGENTS.md section 6 and 15.
+        - CA-CFAR emits class 'unknown-object' (class_id=27 from official marineguard_classes.yaml)
+          for class-agnostic acoustic anomalies.
+        - SSS specialist model emits class 'net' (class_id=29 from official marineguard_classes.yaml)
+          when use_sss_model=True or when loaded via with_sss_model().
+          Maps SSS native class 0 to MarineGuard class 29 ("net")
+          per the official taxonomy contract.
     """
 
     UNKNOWN_CLASS_NAME = "unknown-object"
     UNKNOWN_CLASS_ID = 27
+    SSS_CLASS_NAME = "net"
+    SSS_CLASS_ID = 29
 
     # SSS YOLO class mapping: native SSS class 0 → MarineGuard class 29 "net"
     # Source: AGENTS.md section 6 (Official Taxonomy), section 15 (SSS Class Mapping)
@@ -63,14 +73,59 @@ class SideScanDetector(BaseDetector):
         min_area: int = 25,
         min_dim: int = 4,
         model: Optional[MarineDebrisModel] = None,
+        model_path: Optional[Union[str, Path]] = None,
         use_sss_model: bool = False,
     ):
         self.cfar_pfa = cfar_pfa
         self.confidence_threshold = confidence_threshold
         self.min_area = min_area
         self.min_dim = min_dim
-        self.model = model if model is not None else MarineDebrisModel.get(confidence_threshold=confidence_threshold)
+        if model is not None:
+            self.model = model
+        elif model_path is not None:
+            self.model = MarineDebrisModel.get(
+                model_path=Path(model_path),
+                confidence_threshold=confidence_threshold,
+            )
+        else:
+            self.model = MarineDebrisModel.get(confidence_threshold=confidence_threshold)
         self.use_sss_model = use_sss_model
+
+    @classmethod
+    def with_sss_model(
+        cls,
+        confidence_threshold: float = 0.50,
+        use_onnx: bool = False,
+        model_path: Optional[Union[str, Path]] = None,
+        cfar_pfa: float = 1e-4,
+        min_area: int = 25,
+        min_dim: int = 4,
+    ) -> "SideScanDetector":
+        """Factory initializing SideScanDetector configured with the SSS specialist model.
+
+        When use_onnx=False (default), loads:
+            runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.pt
+        When use_onnx=True, loads:
+            runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.onnx
+        """
+        if model_path is not None:
+            target_path = Path(model_path)
+        else:
+            target_path = DEFAULT_SSS_ONNX_PATH if use_onnx else DEFAULT_SSS_PT_PATH
+
+        model = MarineDebrisModel.get(
+            model_path=target_path,
+            confidence_threshold=confidence_threshold,
+            task="detect",
+        )
+        return cls(
+            cfar_pfa=cfar_pfa,
+            confidence_threshold=confidence_threshold,
+            min_area=min_area,
+            min_dim=min_dim,
+            model=model,
+            use_sss_model=True,
+        )
 
     @property
     def is_ready(self) -> bool:
@@ -275,14 +330,202 @@ class SideScanDetector(BaseDetector):
 
         return candidates
 
+    def _prepare_sss_image(
+        self,
+        image_input: Union[str, Path, bytes, np.ndarray, Image.Image],
+    ) -> Tuple[np.ndarray, int, int]:
+        """Validates and prepares input as a 3-channel uint8 numpy array [H, W, 3] and (width, height).
+
+        Raises:
+            ImageValidationError: If input is missing, empty, corrupt, or contains NaN/Inf values.
+        """
+        # File path
+        if isinstance(image_input, (str, Path)):
+            p = Path(image_input)
+            if not p.exists() or not p.is_file():
+                raise ImageValidationError(f"Waterfall image file not found: '{p}'")
+            supported_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
+            if p.suffix.lower() not in supported_exts:
+                raise ImageValidationError(f"Unsupported waterfall image extension '{p.suffix}'.")
+            try:
+                pil_img = Image.open(p)
+                pil_img.verify()
+                pil_img = Image.open(p)
+                w, h = pil_img.size
+                arr = np.array(pil_img.convert("RGB"))
+            except Exception as exc:
+                raise ImageValidationError(f"Failed to decode waterfall image file '{p}': {exc}") from exc
+
+        # Raw Bytes
+        elif isinstance(image_input, (bytes, bytearray)):
+            if len(image_input) == 0:
+                raise ImageValidationError("Input waterfall image bytes are empty (0 bytes).")
+            try:
+                pil_img = Image.open(io.BytesIO(image_input))
+                pil_img.verify()
+                pil_img = Image.open(io.BytesIO(image_input))
+                w, h = pil_img.size
+                arr = np.array(pil_img.convert("RGB"))
+            except Exception as exc:
+                raise ImageValidationError(f"Failed to decode waterfall bytes: {exc}") from exc
+
+        # PIL Image
+        elif isinstance(image_input, Image.Image):
+            w, h = image_input.size
+            if w <= 0 or h <= 0:
+                raise ImageValidationError(f"Invalid image dimensions: {w}x{h}")
+            try:
+                arr = np.array(image_input.convert("RGB"))
+            except Exception as exc:
+                raise ImageValidationError(f"Failed to convert PIL Image: {exc}") from exc
+
+        # NumPy Array
+        elif isinstance(image_input, np.ndarray):
+            arr_in = image_input
+            if arr_in.size == 0:
+                raise ImageValidationError("Waterfall array is empty (0 elements).")
+            if len(arr_in.shape) not in (2, 3):
+                raise ImageValidationError(f"Invalid waterfall matrix dimensions {arr_in.shape}. Expected 2D or 3D.")
+            if np.isnan(arr_in).any():
+                raise ImageValidationError("Waterfall matrix contains NaN (Not-a-Number) values.")
+            if np.isinf(arr_in).any():
+                raise ImageValidationError("Waterfall matrix contains Infinite (Inf) values.")
+            h, w = arr_in.shape[:2]
+            if h <= 0 or w <= 0:
+                raise ImageValidationError(f"Invalid waterfall dimensions: {w}x{h}")
+
+            if len(arr_in.shape) == 2:
+                if arr_in.dtype != np.uint8:
+                    if arr_in.max() <= 1.0 and arr_in.max() > 0:
+                        arr_u8 = (arr_in * 255.0).clip(0, 255).astype(np.uint8)
+                    else:
+                        arr_u8 = arr_in.clip(0, 255).astype(np.uint8)
+                else:
+                    arr_u8 = arr_in
+                arr = np.stack([arr_u8] * 3, axis=-1)
+            else:
+                if arr_in.shape[2] == 1:
+                    arr_u8 = arr_in[:, :, 0]
+                    if arr_u8.dtype != np.uint8:
+                        if arr_u8.max() <= 1.0 and arr_u8.max() > 0:
+                            arr_u8 = (arr_u8 * 255.0).clip(0, 255).astype(np.uint8)
+                        else:
+                            arr_u8 = arr_u8.clip(0, 255).astype(np.uint8)
+                    arr = np.stack([arr_u8] * 3, axis=-1)
+                elif arr_in.shape[2] == 4:
+                    arr = arr_in[:, :, :3]
+                    if arr.dtype != np.uint8:
+                        arr = arr.clip(0, 255).astype(np.uint8)
+                elif arr_in.shape[2] == 3:
+                    arr = arr_in
+                    if arr.dtype != np.uint8:
+                        arr = arr.clip(0, 255).astype(np.uint8)
+                else:
+                    raise ImageValidationError(f"Unsupported channel dimension in waterfall matrix: {arr_in.shape[2]}")
+
+        else:
+            raise ImageValidationError(
+                f"Unsupported waterfall input type '{type(image_input).__name__}'. "
+                f"Expected 2D/3D np.ndarray, PIL.Image, bytes, or file path."
+            )
+
+        return arr, w, h
+
+    def detect_sss(
+        self,
+        image_input: Union[str, Path, bytes, np.ndarray, Image.Image],
+        confidence_threshold: Optional[float] = None,
+    ) -> DetectionResult:
+        """Executes SSS specialist YOLO/ONNX model inference on side-scan sonar waterfall imagery.
+
+        One-class mapping:
+            Local model class 0 -> official MarineGuard taxonomy class 29 ("net").
+
+        Raises:
+            ModelNotFoundError: If SSS specialist weights are not loaded.
+            ImageValidationError: If input fails validation.
+        """
+        if not self.is_model_loaded:
+            raise ModelNotFoundError(
+                f"SSS specialist model is not available at '{self.model.model_path}'. "
+                f"Trained SSS weights must be loaded to run detect_sss()."
+            )
+
+        img_arr, w, h = self._prepare_sss_image(image_input)
+        conf_thresh = confidence_threshold if confidence_threshold is not None else self.confidence_threshold
+
+        preprocessor = DefaultPreprocessor()
+        processed_img = preprocessor.preprocess(img_arr)
+
+        start_time = time.perf_counter()
+        results = self.model.model.predict(
+             processed_img,
+            imgsz=512,
+            rect=False,
+            conf=conf_thresh,
+            device="cpu",
+            verbose=False,
+        )
+        latency_ms = (time.perf_counter() - start_time) * 1000.0
+
+        detections: List[Detection] = []
+        for r in results:
+            if r.boxes is None:
+                continue
+            for box in r.boxes:
+                local_cls = int(box.cls.item())
+                # SSS specialist is a single-class model mapping local class 0 -> class 29 ("net")
+                if local_cls == 0:
+                    cls_id = self.SSS_CLASS_ID
+                    cls_name = self.SSS_CLASS_NAME
+                else:
+                    cls_id = local_cls
+                    cls_name = self.model.class_names.get(local_cls, f"class_{local_cls}")
+
+                conf = float(box.conf.item())
+                raw_bbox = [float(coord) for coord in box.xyxy[0].tolist()]
+
+                detections.append(
+                    Detection(
+                        class_name=cls_name,
+                        class_id=cls_id,
+                        confidence=conf,
+                        bbox=raw_bbox,
+                        metadata={
+                            "sensor": "side_scan",
+                            "method": "SSS_YOLO",
+                            "local_class_id": local_cls,
+                            "official_class_id": cls_id,
+                        },
+                    )
+                )
+
+        raw_result = DetectionResult.from_detections(
+            detections=detections,
+            image_width=w,
+            image_height=h,
+            inference_time_ms=latency_ms,
+            model_name=self.model_name,
+        )
+
+        postprocessor = PostProcessor(confidence_threshold=conf_thresh)
+        return postprocessor.process(raw_result, image_width=w, image_height=h)
+
     def detect_waterfall(
         self,
         image_input: Union[str, Path, bytes, np.ndarray, Image.Image],
         confidence_threshold: Optional[float] = None,
         cfar_pfa: Optional[float] = None,
+        use_ml: bool = False,
         use_sss_model: Optional[bool] = None,
     ) -> DetectionResult:
-        """Executes CA-CFAR acoustic anomaly detection on a side-scan sonar waterfall image/matrix.
+        """Executes acoustic anomaly detection on a side-scan sonar waterfall image/matrix.
+
+        Args:
+            image_input: File path, raw bytes, PIL Image, or 2D/3D numpy array.
+            confidence_threshold: Minimum confidence threshold.
+            cfar_pfa: Probability of false alarm for CA-CFAR (when use_ml=False).
+            use_ml: If True, uses the dedicated SSS specialist model; if False, uses CA-CFAR.
 
         When use_sss_model is True (or set at construction time), routes through the SSS YOLO
         inference path and maps native SSS class 0 to MarineGuard class 29 ("net").
@@ -297,14 +540,14 @@ class SideScanDetector(BaseDetector):
         Returns:
             DetectionResult: Structured container of canonical Detection objects.
         """
-        start_time = time.perf_counter()
+        if use_ml:
+            return self.detect_sss(image_input, confidence_threshold=confidence_threshold)
 
-        if use_sss_model is None:
-            use_sss_model = self.use_sss_model
+        start_time = time.perf_counter()
 
         mat_f, width, height = self.validate_and_normalize_matrix(image_input)
 
-        if use_sss_model:
+        if use_sss_model is True:
             if self.model is None or not self.model.is_loaded:
                 raise RuntimeError("SSS model is not loaded")
 
@@ -397,14 +640,17 @@ class SideScanDetector(BaseDetector):
     def detect(self, image: np.ndarray) -> DetectionResult:
         """BaseDetector interface implementation.
 
+        When use_sss_model=True, routes through the SSS YOLO path.
+        Otherwise uses CA-CFAR.
+
         Catches ImageValidationError and converts it to an error DetectionResult
         so callers can inspect result.status without catching exceptions.
 
         For production use that requires explicit error propagation, call
-        detect_waterfall() directly.
+        detect_waterfall() or detect_sss() directly.
         """
         try:
-            return self.detect_waterfall(image)
+            return self.detect_waterfall(image, use_sss_model=self.use_sss_model)
         except ImageValidationError as exc:
             return DetectionResult.from_detections(
                 detections=[],
@@ -415,15 +661,16 @@ class SideScanDetector(BaseDetector):
         self,
         ping_payload: Dict[str, Any],
         allow_dev_fallback: bool = True,
+        use_ml: bool = False,
     ) -> List[DebrisContact]:
-        """Runs CA-CFAR detection on ping payload and maps results to DebrisContact objects for fusion."""
+        """Runs CA-CFAR / ML detection on ping payload and maps results to DebrisContact objects for fusion."""
         meta = ping_payload.get("target_meta", {})
         sonar_img = ping_payload.get("sonar_waterfall")
 
-        # 1. Real CA-CFAR Detection Path
+        # 1. Real Detection Path (CA-CFAR or ML)
         if sonar_img is not None and isinstance(sonar_img, np.ndarray) and sonar_img.size > 0:
             try:
-                result = self.detect_waterfall(sonar_img)
+                result = self.detect_waterfall(sonar_img, use_ml=use_ml)
                 if result.count > 0:
                     contacts = []
                     for i, det in enumerate(result.detections):
@@ -474,10 +721,11 @@ class SideScanDetector(BaseDetector):
         self,
         image_input: Union[str, Path, bytes, np.ndarray, Image.Image],
         detections: Optional[Union[DetectionResult, List[Detection]]] = None,
+        use_ml: bool = False,
     ) -> Image.Image:
-        """Renders CA-CFAR candidate bounding boxes and labels onto the waterfall image."""
+        """Renders candidate bounding boxes and labels onto the waterfall image."""
         from marineguard.detection.annotator import ImageAnnotator
         if detections is None:
-            detections = self.detect_waterfall(image_input)
+            detections = self.detect_waterfall(image_input, use_ml=use_ml)
         annotator = ImageAnnotator()
         return annotator.annotate(image_input, detections)

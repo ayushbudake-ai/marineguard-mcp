@@ -25,6 +25,7 @@ from marineguard.detection.schema import DetectionResult
 from marineguard.detection.detector import BaseDetector, YOLODetector
 from marineguard.detection.preprocessing import BasePreprocessor, DefaultPreprocessor
 from marineguard.detection.postprocessing import PostProcessor
+from marineguard.detection.filtering import DetectionFilter
 from marineguard.detection.model_loader import ModelNotFoundError
 
 
@@ -34,7 +35,7 @@ class ImageValidationError(ValueError):
 
 
 class ImageDetectionPipeline:
-    """Coordinates validation, preprocessing, model inference, and postprocessing."""
+    """Coordinates validation, preprocessing, model inference, postprocessing, and Role 3 filtering."""
 
     SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
 
@@ -43,11 +44,15 @@ class ImageDetectionPipeline:
         detector: Optional[BaseDetector] = None,
         preprocessor: Optional[BasePreprocessor] = None,
         postprocessor: Optional[PostProcessor] = None,
+        detection_filter: Optional[DetectionFilter] = None,
         confidence_threshold: float = 0.50,
+        enable_filtering: bool = True,
     ):
         self.detector = detector if detector is not None else YOLODetector(confidence_threshold=confidence_threshold)
         self.preprocessor = preprocessor if preprocessor is not None else DefaultPreprocessor()
         self.postprocessor = postprocessor if postprocessor is not None else PostProcessor(confidence_threshold=confidence_threshold)
+        self.enable_filtering = enable_filtering
+        self.detection_filter = detection_filter if detection_filter is not None else DetectionFilter(confidence_threshold=confidence_threshold)
 
     def validate_and_load_image(self, image_input: Union[str, Path, bytes, np.ndarray, Image.Image]) -> Tuple[np.ndarray, int, int]:
         """Validates input and converts to numpy array [H, W, C] along with (width, height).
@@ -123,11 +128,24 @@ class ImageDetectionPipeline:
         # 3. Detector Inference
         raw_result = self.detector.detect(preprocessed_image)
 
-        # 4. Post-processing
-        final_result = self.postprocessor.process(
+        # 4. Post-processing (Role 2)
+        postprocessed_result = self.postprocessor.process(
             result=raw_result,
             image_width=width,
             image_height=height,
         )
+
+        # 5. Role 3 Filtering & Confidence Presentation & Evidence
+        if self.enable_filtering and self.detection_filter is not None:
+            if hasattr(self.postprocessor, "confidence_threshold"):
+                self.detection_filter.confidence_threshold = self.postprocessor.confidence_threshold
+            filtered_result = self.detection_filter.filter(
+                postprocessed_result,
+                image_width=width,
+                image_height=height,
+            )
+            final_result = filtered_result.to_detection_result()
+        else:
+            final_result = postprocessed_result
 
         return final_result

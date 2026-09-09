@@ -33,6 +33,10 @@ class Detection(BaseModel):
             d["segmentation"] = self.segmentation
         if self.metadata:
             d["metadata"] = self.metadata
+            if "calibrated_confidence" in self.metadata:
+                d["calibrated_confidence"] = self.metadata["calibrated_confidence"]
+            if "role3" in self.metadata:
+                d["role3"] = self.metadata["role3"]
         return d
 
 
@@ -45,6 +49,8 @@ class DetectionResult(BaseModel):
     inference_time_ms: Optional[float] = Field(default=None, description="Inference latency in milliseconds")
     model_name: Optional[str] = Field(default=None, description="Model identifier used for inference")
     status: str = Field(default="SUCCESS", description="Execution status")
+    role3_summary: Optional[Dict[str, Any]] = Field(default=None, description="Role 3 filtering summary")
+    all_detections: Optional[List[Dict[str, Any]]] = Field(default=None, description="Role 3 all detections (accepted + rejected with reasons)")
 
     @classmethod
     def from_detections(
@@ -55,6 +61,8 @@ class DetectionResult(BaseModel):
         inference_time_ms: Optional[float] = None,
         model_name: Optional[str] = None,
         status: str = "SUCCESS",
+        role3_summary: Optional[Dict[str, Any]] = None,
+        all_detections: Optional[List[Dict[str, Any]]] = None,
     ) -> "DetectionResult":
         """Convenience constructor that automatically synchronizes count."""
         return cls(
@@ -65,6 +73,8 @@ class DetectionResult(BaseModel):
             inference_time_ms=inference_time_ms,
             model_name=model_name,
             status=status,
+            role3_summary=role3_summary,
+            all_detections=all_detections,
         )
 
     def to_api_dict(self) -> Dict[str, Any]:
@@ -85,4 +95,8 @@ class DetectionResult(BaseModel):
             res["image_height"] = self.image_height
         if self.inference_time_ms is not None:
             res["inference_time_ms"] = round(self.inference_time_ms, 2)
+        if self.role3_summary is not None:
+            res["role3_summary"] = self.role3_summary
+        if self.all_detections is not None:
+            res["all_detections"] = self.all_detections
         return res

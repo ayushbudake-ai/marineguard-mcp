@@ -13,10 +13,12 @@ from marineguard.detection.model_loader import MarineDebrisModel
 from marineguard.detection.schema import DetectionResult
 
 
-SSS_MODEL_PATH = (
-    "runs/detect/runs/detect/"
-    "marineguard_sss_yolov8n_exp2_augmented/weights/best.onnx"
-)
+from pathlib import Path
+
+_EXP2_ONNX = Path("runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/best.onnx")
+_BASELINE_ONNX = Path("runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.onnx")
+
+SSS_MODEL_PATH = str(_EXP2_ONNX if _EXP2_ONNX.exists() else _BASELINE_ONNX)
 
 SSS_TEST_IMAGE = (
     "data/processed/marineguard_sss/images/test/"

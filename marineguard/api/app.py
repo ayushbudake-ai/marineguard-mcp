@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from marineguard.detection.pipeline import ImageDetectionPipeline, ImageValidationError
 from marineguard.detection.detector import BaseDetector, YOLODetector
 from marineguard.detection.side_scan import SideScanDetector
+from marineguard.detection.filtering import filter_detection_result
 from marineguard.detection.model_loader import ModelNotFoundError, MarineDebrisModel
 
 app = FastAPI(
@@ -168,7 +169,13 @@ async def detect_side_scan_waterfall_api(
             confidence_threshold=confidence,
             cfar_pfa=cfar_pfa,
         )
-        return result.to_api_dict()
+        filtered = filter_detection_result(
+            result,
+            confidence_threshold=confidence if confidence is not None else 0.30,
+            image_width=result.image_width,
+            image_height=result.image_height,
+        )
+        return filtered.to_detection_result().to_api_dict()
 
     except ImageValidationError as val_err:
         raise HTTPException(
