@@ -137,7 +137,7 @@ V1 class IDs must not be reordered.
 
 ---
 
-# 📁 Repository Structure
+# 📁 Repository Structure:
 
 ```text
 marineguard-mcp/
