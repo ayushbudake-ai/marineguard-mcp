@@ -89,7 +89,7 @@ The SHA-256 checksum below is generated from the actual V2 checkpoint.
    `runs/marineguard_v2_final/weights/best.pt`
 5. Compare its SHA-256 against this registry.
 
-## V2 Status
+## V2 Status:
 
 V2 is an experimental candidate and does **not** replace the frozen V1 production baseline.
 
