@@ -1,4 +1,4 @@
-﻿# MarineGuard — Role 1 Handoff Checklist
+﻿# MarineGuard — Role 1 Handoff Checklist.
 
 ## GitHub-controlled handoff
 
@@ -20,7 +20,7 @@
 - [x] Role dependency matrix
 - [x] No downstream dependency on local Windows paths
 
-## V1 baseline
+## V1 baseline:
 
 V1 is the current official downstream baseline.
 

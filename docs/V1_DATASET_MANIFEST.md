@@ -1,4 +1,4 @@
-﻿# MarineGuard V1 Dataset Manifest
+﻿# MarineGuard V1 Dataset Manifest:
 
 **Dataset version:** V1
 **Status:** FROZEN BASELINE
