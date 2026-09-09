@@ -101,7 +101,7 @@ class Geotagger:
         if "latitude" in meta and "longitude" in meta:
             lat = meta["latitude"]
             lon = meta["longitude"]
-            if self._is_valid_coord(lat) and self._is_valid_coord(lon):
+            if self._is_valid_lat(lat) and self._is_valid_lon(lon):
                 return GeoCoordinate(float(lat), float(lon))
 
         # Source 2: nested coordinates dict in detection metadata
@@ -109,14 +109,14 @@ class Geotagger:
         if isinstance(coords, dict):
             lat = coords.get("lat") or coords.get("latitude")
             lon = coords.get("lon") or coords.get("longitude")
-            if self._is_valid_coord(lat) and self._is_valid_coord(lon):
+            if self._is_valid_lat(lat) and self._is_valid_lon(lon):
                 return GeoCoordinate(float(lat), float(lon))
 
         # Source 3: external mission metadata (caller asserts it is real data)
         if mission_metadata:
             lat = mission_metadata.get("latitude")
             lon = mission_metadata.get("longitude")
-            if self._is_valid_coord(lat) and self._is_valid_coord(lon):
+            if self._is_valid_lat(lat) and self._is_valid_lon(lon):
                 return GeoCoordinate(float(lat), float(lon))
 
         # No real coordinates available
@@ -138,6 +138,30 @@ class Geotagger:
         }
 
     @staticmethod
+    def _is_valid_lat(value: Any) -> bool:
+        """Return True if value is a valid latitude in [-90.0, 90.0]."""
+        if value is None:
+            return False
+        try:
+            f = float(value)
+        except (TypeError, ValueError):
+            return False
+        import math
+        return math.isfinite(f) and -90.0 <= f <= 90.0
+
+    @staticmethod
+    def _is_valid_lon(value: Any) -> bool:
+        """Return True if value is a valid longitude in [-180.0, 180.0]."""
+        if value is None:
+            return False
+        try:
+            f = float(value)
+        except (TypeError, ValueError):
+            return False
+        import math
+        return math.isfinite(f) and -180.0 <= f <= 180.0
+
+    @staticmethod
     def _is_valid_coord(value: Any) -> bool:
         """Return True if value is a finite number usable as a coordinate."""
         if value is None:
@@ -148,3 +172,4 @@ class Geotagger:
             return False
         import math
         return math.isfinite(f)
+

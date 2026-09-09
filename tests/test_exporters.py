@@ -222,6 +222,39 @@ class TestGeotagger:
         assert coords[0].is_available
         assert not coords[1].is_available
 
+    def test_out_of_range_latitude_ignored(self):
+        """Latitude > 90 or < -90 is invalid and ignored."""
+        det_high = _make_detection(latitude=95.0, longitude=80.0)
+        det_low = _make_detection(latitude=-91.5, longitude=80.0)
+        tagger = Geotagger()
+        assert not tagger.geotag(det_high).is_available
+        assert not tagger.geotag(det_low).is_available
+
+    def test_out_of_range_longitude_ignored(self):
+        """Longitude > 180 or < -180 is invalid and ignored."""
+        det_high = _make_detection(latitude=10.0, longitude=185.0)
+        det_low = _make_detection(latitude=10.0, longitude=-185.0)
+        tagger = Geotagger()
+        assert not tagger.geotag(det_high).is_available
+        assert not tagger.geotag(det_low).is_available
+
+    def test_nan_inf_coordinates_ignored(self):
+        """NaN or Inf coordinates are invalid and ignored."""
+        det_nan = _make_detection(latitude=float("nan"), longitude=80.0)
+        det_inf = _make_detection(latitude=10.0, longitude=float("inf"))
+        tagger = Geotagger()
+        assert not tagger.geotag(det_nan).is_available
+        assert not tagger.geotag(det_inf).is_available
+
+    def test_malformed_nested_coordinates_ignored(self):
+        """Malformed nested coordinate types are safely handled without crash."""
+        det_str = _make_detection(extra_meta={"coordinates": "invalid_string"})
+        det_list = _make_detection(extra_meta={"coordinates": [10.0, 80.0]})
+        tagger = Geotagger()
+        assert not tagger.geotag(det_str).is_available
+        assert not tagger.geotag(det_list).is_available
+
+
 
 # ===========================================================================
 # GEOJSON EXPORTER TESTS
