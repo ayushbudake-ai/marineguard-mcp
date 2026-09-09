@@ -23,6 +23,8 @@ from marineguard.trace.tracer import ExplainableTracer
 from marineguard.exporters.pdf_report import PDFReportExporter
 from marineguard.exporters.geojson_export import GeoJSONExporter
 from marineguard.exporters.s100_export import S100Exporter
+from marineguard.exporters.tabular_export import TabularExporter
+from marineguard.detection.schema import Detection, DetectionResult
 from data.test_data.sample_frames import FrameReplayHarness
 
 
@@ -307,6 +309,117 @@ class MarineGuardMCPServer:
             return {"format": "IHO S-100", "data": res, "file_path": "data/reports/s100_catalog.json"}
         else:
             raise ValueError(f"Unsupported export format: {export_format}")
+
+
+    def export_detection_result(
+        self,
+        detection_result: Dict[str, Any],
+        export_format: str = "geojson",
+        output_file: Optional[str] = None,
+        mission_id: Optional[str] = None,
+        mission_metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """MCP Tool: export_detection_result (Role 4)
+
+        Exports a DetectionResult (Role 3 output) to a reporting/GIS format.
+
+        This tool consumes the CURRENT DetectionResult schema (Role 3 output),
+        NOT the legacy ClassifiedTarget schema used by marine_debris_survey.
+
+        Supported formats:
+            geojson — GeoJSON FeatureCollection (RFC 7946)
+            s100    — S-100-inspired JSON catalog (PARTIAL, not certified)
+            pdf     — PDF/text inspection report
+            csv     — CSV tabular export
+            json    — JSON tabular export
+
+        Args:
+            detection_result: DetectionResult as dict (from to_api_dict() or similar).
+            export_format: Target format ('geojson', 's100', 'pdf', 'csv', 'json').
+            output_file: Optional output file path.
+            mission_id: Optional real mission identifier.
+            mission_metadata: Optional real coordinate/mission metadata from actual data.
+
+        Returns:
+            Dict with 'format', 'status', and format-specific data or file path.
+
+        Coordinate handling:
+            Coordinates are read ONLY from detection metadata or mission_metadata.
+            No coordinates are fabricated. Missing coordinates remain null.
+        """
+        try:
+            # Reconstruct DetectionResult from dict
+            detections_raw = detection_result.get("detections", [])
+            detections = []
+            for d in detections_raw:
+                detections.append(Detection(
+                    class_name=d.get("class") or d.get("class_name", "unknown"),
+                    class_id=d.get("class_id"),
+                    confidence=d.get("confidence", 0.0),
+                    bbox=d.get("bbox", [0.0, 0.0, 0.0, 0.0]),
+                    metadata=d.get("metadata", {}),
+                ))
+            result = DetectionResult(
+                detections=detections,
+                count=len(detections),
+                image_width=detection_result.get("image_width"),
+                image_height=detection_result.get("image_height"),
+                inference_time_ms=detection_result.get("inference_time_ms"),
+                model_name=detection_result.get("model_name"),
+                status=detection_result.get("status", "SUCCESS"),
+                role3_summary=detection_result.get("role3_summary"),
+                all_detections=detection_result.get("all_detections"),
+            )
+
+            fmt = export_format.lower().strip()
+
+            if fmt == "geojson":
+                exporter = GeoJSONExporter()
+                data = exporter.export(result, output_file=output_file, mission_metadata=mission_metadata)
+                return {"format": "GeoJSON", "status": "SUCCESS", "data": data, "file_path": output_file}
+
+            elif fmt == "s100":
+                exporter = S100Exporter()
+                data = exporter.export(result, output_file=output_file, mission_metadata=mission_metadata)
+                return {"format": "S-100-partial", "status": "SUCCESS", "data": data, "file_path": output_file}
+
+            elif fmt == "pdf":
+                exporter = PDFReportExporter()
+                out = output_file or "data/reports/detection_report.pdf"
+                path = exporter.generate_report(
+                    result,
+                    output_file=out,
+                    mission_id=mission_id,
+                    mission_metadata=mission_metadata,
+                )
+                return {"format": "PDF", "status": "SUCCESS", "file_path": path}
+
+            elif fmt == "csv":
+                exporter = TabularExporter()
+                csv_str = exporter.export_csv(result, output_file=output_file, mission_metadata=mission_metadata)
+                return {"format": "CSV", "status": "SUCCESS", "data": csv_str, "file_path": output_file}
+
+            elif fmt == "json":
+                exporter = TabularExporter()
+                json_str = exporter.export_json(result, output_file=output_file, mission_metadata=mission_metadata)
+                return {"format": "JSON", "status": "SUCCESS", "data": json_str, "file_path": output_file}
+
+            else:
+                return {
+                    "status": "ERROR",
+                    "error_type": "UNSUPPORTED_FORMAT",
+                    "message": (
+                        f"Unsupported export format '{export_format}'. "
+                        "Supported: geojson, s100, pdf, csv, json"
+                    ),
+                }
+
+        except Exception as exc:
+            return {
+                "status": "ERROR",
+                "error_type": "EXPORT_ERROR",
+                "message": str(exc),
+            }
 
 
 if __name__ == "__main__":
