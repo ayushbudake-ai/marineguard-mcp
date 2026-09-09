@@ -16,6 +16,7 @@ from marineguard.detection.optical import OpticalDetector
 from marineguard.detection.bathymetry import BathymetryDetector
 from marineguard.detection.fusion import MultiSensorFusionEngine
 from marineguard.detection.pipeline import ImageDetectionPipeline, ImageValidationError
+from marineguard.detection.filtering import filter_detection_result
 from marineguard.detection.model_loader import ModelNotFoundError
 from marineguard.firewall.policy import MissionFirewallPolicy
 from marineguard.trace.tracer import ExplainableTracer
@@ -169,25 +170,35 @@ class MarineGuardMCPServer:
                 confidence_threshold=confidence_threshold,
                 cfar_pfa=cfar_pfa,
             )
+            filtered = filter_detection_result(
+                result,
+                confidence_threshold=confidence_threshold if confidence_threshold is not None else 0.30,
+                image_width=result.image_width,
+                image_height=result.image_height,
+            )
+            final_res = filtered.to_detection_result()
 
             self.tracer.log(
                 stage="MCP_SIDE_SCAN_DETECTION",
                 input_summary=f"Side-scan waterfall anomaly detection requested ({type(waterfall_input).__name__})",
-                output_summary=f"Extracted {result.count} acoustic candidate anomalies",
-                model=result.model_name or "SideScanDetector(CA-CFAR)",
-                confidence=float(result.detections[0].confidence) if result.detections else 1.0,
-                reasoning=f"Processed waterfall matrix {result.image_width}x{result.image_height} in {result.inference_time_ms or 0:.1f}ms",
+                output_summary=f"Extracted {final_res.count} acoustic candidate anomalies",
+                model=final_res.model_name or "SideScanDetector(CA-CFAR)",
+                confidence=float(final_res.detections[0].confidence) if final_res.detections else 1.0,
+                reasoning=f"Processed waterfall matrix {final_res.image_width}x{final_res.image_height} in {final_res.inference_time_ms or 0:.1f}ms (Role 3 filtered)",
             )
 
-            return {
+            res_dict = {
                 "status": "SUCCESS",
-                "count": result.count,
-                "detections": [d.to_dict() for d in result.detections],
-                "image_width": result.image_width,
-                "image_height": result.image_height,
-                "inference_time_ms": result.inference_time_ms,
-                "model_name": result.model_name,
+                "count": final_res.count,
+                "detections": [d.to_dict() for d in final_res.detections],
+                "image_width": final_res.image_width,
+                "image_height": final_res.image_height,
+                "inference_time_ms": final_res.inference_time_ms,
+                "model_name": final_res.model_name,
             }
+            if final_res.role3_summary is not None:
+                res_dict["role3_summary"] = final_res.role3_summary
+            return res_dict
 
         except ImageValidationError as val_err:
             return {

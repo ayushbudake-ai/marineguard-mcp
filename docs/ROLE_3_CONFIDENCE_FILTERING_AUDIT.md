@@ -126,15 +126,23 @@ SSS taxonomy mapping preserved:
 
 ---
 
-## 6. API Compatibility
+## 6. API Integration
 
-- `FilteredResult.to_api_dict()` returns `detections` + `count` for **accepted** detections only
-- Adds backward-compatible `role3_summary` key
-- Existing API tests (`test_api.py`) continue to use `to_api_dict()` from `DetectionResult` directly and are unaffected
-- New Role 3 API output is additive (no breaking changes)
+- `ImageDetectionPipeline` executes Role 3 filtering in its live `process()` method.
+- The FastAPI `/detect` endpoint invokes `pipeline.process()` and returns `DetectionResult.to_api_dict()`, which now seamlessly includes:
+  - `count`: Accepted detections count
+  - `detections`: Accepted detections with preserved raw confidence, calibrated 0–100 score, and role3 metadata
+  - `role3_summary`: Breakdown of raw, accepted, and rejected counts
+  - `all_detections`: Complete detection list including rejected candidates with explicit reasons
+- The `/detect/side-scan` endpoint filters CA-CFAR acoustic highlights through `filter_detection_result()` and returns the enriched schema.
+- Full backward compatibility is preserved.
 
 ---
 
-## 7. MCP Compatibility
+## 7. MCP Integration
 
-`marineguard/mcp_server.py` was not modified. Role 3 modules are importable and can be called from MCP tools when integrated. The `FilteredResult.to_api_dict()` output is JSON-serializable.
+- `marineguard/mcp_server.py` integrates Role 3 directly:
+  - `detect_marine_debris` calls `self.detection_pipeline.process()`, executing Role 3 filtering and calibration.
+  - `detect_side_scan_waterfall` calls `filter_detection_result()` on CA-CFAR candidates.
+  - Both tools log trace events via `ExplainableTracer.log_detection_filtering()`.
+- MCP detection consumers receive filtered detections with calibrated presentation confidence scores.

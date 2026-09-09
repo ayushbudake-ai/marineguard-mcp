@@ -143,6 +143,59 @@ class FilteredResult:
         res["all_detections"] = [fd.to_dict() for fd in self.filtered_detections]
         return res
 
+    def to_detection_result(self) -> DetectionResult:
+        """Converts to a standard DetectionResult for downstream pipeline/API consumers.
+        Contains accepted detections with Role 3 calibrated confidence and metadata,
+        and attaches role3_summary and all_detections (with rejection reasons).
+        """
+        accepted_dets: List[Detection] = []
+        for fd in self.accepted:
+            det = fd.raw_detection
+            meta = dict(det.metadata)
+            meta["role3"] = {
+                "raw_confidence": round(fd.raw_confidence, 6),
+                "calibrated_confidence": fd.calibrated_confidence,
+                "confidence_method": fd.confidence_method,
+                "confidence_threshold": fd.confidence_threshold,
+                "filter_status": fd.filter_status,
+                "filter_reason": fd.filter_reason,
+                "applied_rules": fd.applied_rules,
+                "rejection_rule": fd.rejection_rule,
+            }
+            meta["calibrated_confidence"] = fd.calibrated_confidence
+            accepted_dets.append(
+                Detection(
+                    class_name=det.class_name,
+                    class_id=det.class_id,
+                    confidence=det.confidence,
+                    bbox=det.bbox,
+                    segmentation=det.segmentation,
+                    metadata=meta,
+                )
+            )
+
+        role3_summary = {
+            "raw_count": len(self.filtered_detections),
+            "accepted_count": len(self.accepted),
+            "rejected_count": len(self.rejected),
+            "confidence_threshold": self.confidence_threshold,
+            "confidence_method": CONFIDENCE_METHOD,
+        }
+
+        all_detections = [fd.to_dict() for fd in self.filtered_detections]
+
+        return DetectionResult(
+            detections=accepted_dets,
+            count=len(accepted_dets),
+            image_width=self.image_width,
+            image_height=self.image_height,
+            inference_time_ms=self.original_result.inference_time_ms,
+            model_name=self.original_result.model_name,
+            status=self.original_result.status,
+            role3_summary=role3_summary,
+            all_detections=all_detections,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Individual filter functions
@@ -153,19 +206,28 @@ def _check_confidence(
     det: Detection,
     threshold: float,
 ) -> tuple[bool, Optional[str]]:
-    """Rule: LOW_CONFIDENCE — confidence must be >= threshold."""
-    if not (0.0 <= det.confidence <= 1.0):
+    """Rule: LOW_CONFIDENCE — confidence must be >= threshold and a valid float in [0.0, 1.0]."""
+    if det.confidence is None:
         return False, "LOW_CONFIDENCE"
-    if det.confidence < threshold:
+    try:
+        conf = float(det.confidence)
+    except (TypeError, ValueError):
+        return False, "LOW_CONFIDENCE"
+    if not math.isfinite(conf):
+        return False, "LOW_CONFIDENCE"
+    if not (0.0 <= conf <= 1.0):
+        return False, "LOW_CONFIDENCE"
+    if conf < threshold:
         return False, "LOW_CONFIDENCE"
     return True, None
 
 
 def _check_bbox_valid(det: Detection) -> tuple[bool, Optional[str]]:
-    """Rule: INVALID_BBOX — bbox must be a list of exactly 4 finite numbers."""
+    """Rule: INVALID_BBOX — bbox must be a list of exactly 4 finite numbers with x1 <= x2 and y1 <= y2."""
     bbox = det.bbox
-    if len(bbox) != 4:
+    if bbox is None or len(bbox) != 4:
         return False, "INVALID_BBOX"
+    coords = []
     for v in bbox:
         try:
             f = float(v)
@@ -173,16 +235,44 @@ def _check_bbox_valid(det: Detection) -> tuple[bool, Optional[str]]:
             return False, "INVALID_BBOX"
         if not math.isfinite(f):
             return False, "INVALID_BBOX"
+        coords.append(f)
+    x1, y1, x2, y2 = coords
+    if x2 < x1 or y2 < y1:
+        return False, "INVALID_BBOX"
     return True, None
 
 
 def _check_bbox_positive_area(det: Detection) -> tuple[bool, Optional[str]]:
     """Rule: ZERO_AREA_BBOX — bbox must have positive width and height."""
-    x1, y1, x2, y2 = det.bbox
-    w = abs(float(x2) - float(x1))
-    h = abs(float(y2) - float(y1))
+    x1, y1, x2, y2 = [float(v) for v in det.bbox]
+    w = x2 - x1
+    h = y2 - y1
     if w <= 0.0 or h <= 0.0:
         return False, "ZERO_AREA_BBOX"
+    return True, None
+
+
+def _check_shadow_ratio(
+    det: Detection,
+    min_shadow_ratio: Optional[float] = None,
+    max_shadow_ratio: Optional[float] = None,
+) -> tuple[bool, Optional[str]]:
+    """Optional Rule: SHADOW_RATIO — evaluates acoustic shadow ratio if present in metadata.
+    Does NOT fabricate shadow ratio if absent.
+    """
+    shadow_ratio = det.metadata.get("acoustic_shadow_ratio", det.metadata.get("shadow_ratio"))
+    if shadow_ratio is None:
+        return True, None
+    try:
+        sr = float(shadow_ratio)
+    except (TypeError, ValueError):
+        return False, "INVALID_SHADOW_RATIO"
+    if not math.isfinite(sr) or sr < 0.0:
+        return False, "INVALID_SHADOW_RATIO"
+    if min_shadow_ratio is not None and sr < min_shadow_ratio:
+        return False, "SHADOW_RATIO_TOO_LOW"
+    if max_shadow_ratio is not None and sr > max_shadow_ratio:
+        return False, "SHADOW_RATIO_TOO_HIGH"
     return True, None
 
 
@@ -331,25 +421,36 @@ class DetectionFilter:
 
     def filter(
         self,
-        result: DetectionResult,
+        result: Optional[DetectionResult],
         image_width: Optional[int] = None,
         image_height: Optional[int] = None,
     ) -> FilteredResult:
-        """Filter all detections in result.
+        """Filter all detections in result. Safe on None or empty input.
 
         Args:
-            result: Role 2 DetectionResult.
+            result: Role 2 DetectionResult (or None).
             image_width: Image width in pixels (optional; enables OUT_OF_BOUNDS check).
             image_height: Image height in pixels (optional; enables OUT_OF_BOUNDS check).
 
         Returns:
             FilteredResult with per-detection filter status.
         """
+        if result is None:
+            empty_res = DetectionResult.from_detections([])
+            return FilteredResult(
+                original_result=empty_res,
+                filtered_detections=[],
+                confidence_threshold=self.confidence_threshold,
+                image_width=image_width,
+                image_height=image_height,
+            )
+
         w = image_width if image_width is not None else result.image_width
         h = image_height if image_height is not None else result.image_height
 
+        detections = result.detections if result.detections is not None else []
         filtered: List[FilteredDetection] = []
-        for det in result.detections:
+        for det in detections:
             fd = self._filter_one(det, result, w, h)
             filtered.append(fd)
 
@@ -370,7 +471,13 @@ class DetectionFilter:
     ) -> FilteredDetection:
         """Apply all rules to a single Detection."""
         # Compute calibrated confidence (handles invalid raw gracefully)
-        raw_conf = float(det.confidence)
+        raw_conf = 0.0
+        try:
+            if det.confidence is not None:
+                raw_conf = float(det.confidence)
+        except (TypeError, ValueError):
+            raw_conf = 0.0
+
         try:
             cal_conf = calibrate_confidence(raw_conf)
         except ValueError:
@@ -423,6 +530,10 @@ class DetectionFilter:
                 elif source == "bathymetry":
                     ok, reason = _check_bathymetry_geometry(det, self.min_area_px2)
                     still_ok = run_rule("BATHYMETRY_GEOMETRY_CHECK", ok, reason) and still_ok
+
+            # 8. Optional shadow-ratio check if present in metadata
+            ok, reason = _check_shadow_ratio(det)
+            still_ok = run_rule("SHADOW_RATIO_CHECK", ok, reason) and still_ok
 
         status = "accepted" if still_ok else "rejected"
         return FilteredDetection(
