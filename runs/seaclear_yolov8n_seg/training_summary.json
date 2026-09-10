@@ -1,0 +1,445 @@
+{
+  "model": "yolov8n-seg.pt",
+  "epochs_requested": 50,
+  "batch_size": 16,
+  "imgsz": 512,
+  "device": "cpu",
+  "training_duration_seconds": 69013.96804022789,
+  "best_checkpoint": "D:\\Marine Drive\\marineguard-mcp\\runs\\seaclear_yolov8n_seg\\train\\weights\\best.pt",
+  "validation_metrics": {
+    "box": {
+      "precision": 0.8012373160415581,
+      "recall": 0.5967515254271832,
+      "map50": 0.6521842250429478,
+      "map50_95": 0.47909319275644796,
+      "f1": 0.684039208889026
+    },
+    "mask": {
+      "precision": 0.7826955193055244,
+      "recall": 0.577851573979416,
+      "map50": 0.6268084079173004,
+      "map50_95": 0.38061907723185495,
+      "f1": 0.6648528963232468
+    },
+    "per_class": {
+      "bottle": {
+        "class_id": 0,
+        "mask_mAP50-95": 0.4616996163735945
+      },
+      "can": {
+        "class_id": 1,
+        "mask_mAP50-95": 0.4098048136894848
+      },
+      "chain": {
+        "class_id": 2,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "drink-carton": {
+        "class_id": 3,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "hook": {
+        "class_id": 4,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "propeller": {
+        "class_id": 5,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "shampoo-bottle": {
+        "class_id": 6,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "standing-bottle": {
+        "class_id": 7,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "tire": {
+        "class_id": 8,
+        "mask_mAP50-95": 0.7939355343924
+      },
+      "valve": {
+        "class_id": 9,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "metal-bucket": {
+        "class_id": 10,
+        "mask_mAP50-95": 0.6264861192178608
+      },
+      "ball": {
+        "class_id": 11,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "cube": {
+        "class_id": 12,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "cylinder": {
+        "class_id": 13,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "circle-cage": {
+        "class_id": 14,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "square-cage": {
+        "class_id": 15,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "human-body": {
+        "class_id": 16,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "plane": {
+        "class_id": 17,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "rov": {
+        "class_id": 18,
+        "mask_mAP50-95": 0.38061907723185495
+      },
+      "tarp": {
+        "class_id": 19,
+        "mask_mAP50-95": 0.06383333333333334
+      },
+      "plastic-container": {
+        "class_id": 20,
+        "mask_mAP50-95": 0.4944773849162306
+      },
+      "cement-tube": {
+        "class_id": 21,
+        "mask_mAP50-95": 0.6491689898456083
+      },
+      "plant": {
+        "class_id": 22,
+        "mask_mAP50-95": 0.45093495560544
+      },
+      "animal": {
+        "class_id": 23,
+        "mask_mAP50-95": 0.35948834675618135
+      },
+      "sponge": {
+        "class_id": 24,
+        "mask_mAP50-95": 0.5497281421613989
+      },
+      "glass-bottle": {
+        "class_id": 25,
+        "mask_mAP50-95": 0.47835076022893935
+      },
+      "metal-wreckage": {
+        "class_id": 26,
+        "mask_mAP50-95": 0.3557414686913468
+      },
+      "unknown-object": {
+        "class_id": 27,
+        "mask_mAP50-95": 0.31219342153832413
+      },
+      "plastic-pipe": {
+        "class_id": 28,
+        "mask_mAP50-95": 0.31544414491936806
+      },
+      "net": {
+        "class_id": 29,
+        "mask_mAP50-95": 0.5858728566552207
+      },
+      "shell": {
+        "class_id": 30,
+        "mask_mAP50-95": 0.30341472956563803
+      },
+      "rope": {
+        "class_id": 31,
+        "mask_mAP50-95": 0.24692173055769057
+      },
+      "plastic-cup": {
+        "class_id": 32,
+        "mask_mAP50-95": 0.37161937047243776
+      },
+      "brick": {
+        "class_id": 33,
+        "mask_mAP50-95": 0.5086277571666848
+      },
+      "plastic-bag": {
+        "class_id": 34,
+        "mask_mAP50-95": 0.5722264334265861
+      },
+      "sanitary-waste": {
+        "class_id": 35,
+        "mask_mAP50-95": 0.3228246212121212
+      },
+      "clothing": {
+        "class_id": 36,
+        "mask_mAP50-95": 0.6474774915062629
+      },
+      "ceramic-cup": {
+        "class_id": 37,
+        "mask_mAP50-95": 0.20042717807368104
+      },
+      "rubber-boot": {
+        "class_id": 38,
+        "mask_mAP50-95": 0.7014543674248009
+      },
+      "glass-jar": {
+        "class_id": 39,
+        "mask_mAP50-95": 0.07891353383458648
+      },
+      "rov-cable": {
+        "class_id": 40,
+        "mask_mAP50-95": 0.3813160748391149
+      },
+      "rov-part": {
+        "class_id": 41,
+        "mask_mAP50-95": 0.8849763230592101
+      },
+      "wood-branch": {
+        "class_id": 42,
+        "mask_mAP50-95": 0.29753785546352934
+      },
+      "furniture": {
+        "class_id": 43,
+        "mask_mAP50-95": 0.0
+      },
+      "snack-wrapper": {
+        "class_id": 44,
+        "mask_mAP50-95": 0.5043035204131575
+      },
+      "plastic-lid": {
+        "class_id": 45,
+        "mask_mAP50-95": 0.0070591944672317945
+      },
+      "cardboard": {
+        "class_id": 46,
+        "mask_mAP50-95": 0.0
+      },
+      "metal-cable": {
+        "class_id": 47,
+        "mask_mAP50-95": 0.24361004281311188
+      },
+      "fish": {
+        "class_id": 48,
+        "mask_mAP50-95": 0.12765473335148755
+      },
+      "starfish": {
+        "class_id": 49,
+        "mask_mAP50-95": 0.014142857142857141
+      }
+    }
+  },
+  "test_metrics": {
+    "box": {
+      "precision": 0.8179331936953446,
+      "recall": 0.592179211579037,
+      "map50": 0.6867473684127351,
+      "map50_95": 0.4920829883881824,
+      "f1": 0.6869849977280144
+    },
+    "mask": {
+      "precision": 0.8149266410805979,
+      "recall": 0.5570235114307486,
+      "map50": 0.6435054535375789,
+      "map50_95": 0.39375145388231203,
+      "f1": 0.6617343907754342
+    },
+    "per_class": {
+      "bottle": {
+        "class_id": 0,
+        "mask_mAP50-95": 0.46340236122571843
+      },
+      "can": {
+        "class_id": 1,
+        "mask_mAP50-95": 0.38949635367848723
+      },
+      "chain": {
+        "class_id": 2,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "drink-carton": {
+        "class_id": 3,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "hook": {
+        "class_id": 4,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "propeller": {
+        "class_id": 5,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "shampoo-bottle": {
+        "class_id": 6,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "standing-bottle": {
+        "class_id": 7,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "tire": {
+        "class_id": 8,
+        "mask_mAP50-95": 0.8040581133360118
+      },
+      "valve": {
+        "class_id": 9,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "metal-bucket": {
+        "class_id": 10,
+        "mask_mAP50-95": 0.5805
+      },
+      "ball": {
+        "class_id": 11,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "cube": {
+        "class_id": 12,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "cylinder": {
+        "class_id": 13,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "circle-cage": {
+        "class_id": 14,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "square-cage": {
+        "class_id": 15,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "human-body": {
+        "class_id": 16,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "plane": {
+        "class_id": 17,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "rov": {
+        "class_id": 18,
+        "mask_mAP50-95": 0.39375145388231203
+      },
+      "tarp": {
+        "class_id": 19,
+        "mask_mAP50-95": 0.01349606537530266
+      },
+      "plastic-container": {
+        "class_id": 20,
+        "mask_mAP50-95": 0.45255120167189133
+      },
+      "cement-tube": {
+        "class_id": 21,
+        "mask_mAP50-95": 0.7047253699015624
+      },
+      "plant": {
+        "class_id": 22,
+        "mask_mAP50-95": 0.45234801352019005
+      },
+      "animal": {
+        "class_id": 23,
+        "mask_mAP50-95": 0.3577915235601174
+      },
+      "sponge": {
+        "class_id": 24,
+        "mask_mAP50-95": 0.5373991042928725
+      },
+      "glass-bottle": {
+        "class_id": 25,
+        "mask_mAP50-95": 0.4744134418084013
+      },
+      "metal-wreckage": {
+        "class_id": 26,
+        "mask_mAP50-95": 0.30640141955374495
+      },
+      "unknown-object": {
+        "class_id": 27,
+        "mask_mAP50-95": 0.3272955569526883
+      },
+      "plastic-pipe": {
+        "class_id": 28,
+        "mask_mAP50-95": 0.3194257262402458
+      },
+      "net": {
+        "class_id": 29,
+        "mask_mAP50-95": 0.5858914789036143
+      },
+      "shell": {
+        "class_id": 30,
+        "mask_mAP50-95": 0.3731127406503178
+      },
+      "rope": {
+        "class_id": 31,
+        "mask_mAP50-95": 0.26908466281714577
+      },
+      "plastic-cup": {
+        "class_id": 32,
+        "mask_mAP50-95": 0.34438663959163474
+      },
+      "brick": {
+        "class_id": 33,
+        "mask_mAP50-95": 0.4911933014779784
+      },
+      "plastic-bag": {
+        "class_id": 34,
+        "mask_mAP50-95": 0.5862706038738942
+      },
+      "sanitary-waste": {
+        "class_id": 35,
+        "mask_mAP50-95": 0.1345039627039627
+      },
+      "clothing": {
+        "class_id": 36,
+        "mask_mAP50-95": 0.7463670798600471
+      },
+      "ceramic-cup": {
+        "class_id": 37,
+        "mask_mAP50-95": 0.06988397819076386
+      },
+      "rubber-boot": {
+        "class_id": 38,
+        "mask_mAP50-95": 0.6894310972358014
+      },
+      "glass-jar": {
+        "class_id": 39,
+        "mask_mAP50-95": 0.339799913578485
+      },
+      "rov-cable": {
+        "class_id": 40,
+        "mask_mAP50-95": 0.3855675096593586
+      },
+      "rov-part": {
+        "class_id": 41,
+        "mask_mAP50-95": 0.8377238753678405
+      },
+      "wood-branch": {
+        "class_id": 42,
+        "mask_mAP50-95": 0.36230852443039596
+      },
+      "furniture": {
+        "class_id": 43,
+        "mask_mAP50-95": 0.057166666666666664
+      },
+      "snack-wrapper": {
+        "class_id": 44,
+        "mask_mAP50-95": 0.5313827986949591
+      },
+      "plastic-lid": {
+        "class_id": 45,
+        "mask_mAP50-95": 0.2475
+      },
+      "cardboard": {
+        "class_id": 46,
+        "mask_mAP50-95": 0.058499999999999996
+      },
+      "metal-cable": {
+        "class_id": 47,
+        "mask_mAP50-95": 0.3045542328042328
+      },
+      "fish": {
+        "class_id": 48,
+        "mask_mAP50-95": 0.17285830899732535
+      },
+      "starfish": {
+        "class_id": 49,
+        "mask_mAP50-95": 0.01050925925925926
+      }
+    }
+  }
+}

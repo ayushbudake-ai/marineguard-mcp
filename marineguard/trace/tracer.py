@@ -43,3 +43,22 @@ class ExplainableTracer:
 
     def export_json(self) -> str:
         return json.dumps([e.model_dump() for e in self.events], indent=2)
+
+    def log_detection_filtering(
+        self,
+        filtered_result: Any,
+        stage: str = "ROLE_3_FILTERING",
+    ) -> TraceEvent:
+        """Convenience method to log a Role 3 filtering result directly to trace history."""
+        raw_count = len(getattr(filtered_result, "filtered_detections", []))
+        accepted_count = len(getattr(filtered_result, "accepted", []))
+        rejected_count = len(getattr(filtered_result, "rejected", []))
+        reasoning = f"Filtered {raw_count} raw detections: {accepted_count} accepted, {rejected_count} rejected."
+        return self.log(
+            stage=stage,
+            input_summary=f"{raw_count} raw detections",
+            output_summary=f"{accepted_count} accepted detections",
+            model="DetectionFilter",
+            confidence=1.0,
+            reasoning=reasoning,
+        )

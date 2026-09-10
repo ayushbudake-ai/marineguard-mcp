@@ -39,7 +39,7 @@ flowchart TD
 | Module | Responsibility | Current Codebase Status | SIH26057 Scope Action |
 |:---|:---|:---|:---|
 | **Preprocessing** | Denoise (speckle filter), resolution normalization, contrast enhancement, dropout simulation. | Planned (Phase 1) | Implement standalone pipeline using OpenCV / NumPy. |
-| **Detection / Segmentation** | Trained model inference (YOLOv8-seg / U-Net) to detect debris classes. | Partially Implemented (`side_scan.py` uses 1D CA-CFAR heuristic) | Swap CFAR with trained ONNX model in Phase 2. |
+| **Detection / Segmentation** | Trained model inference to detect debris classes. | **Baseline delivered:** YOLOv8n object detector trained & evaluated (89.70% P / 71.90% R / 79.94% F1 / 80.69% mAP50 on 1,808-image held-out test — see `ROLE1_FINAL_RESULTS.md`). Legacy `side_scan.py` CA-CFAR heuristic remains as fallback pending Role 2 integration. | Export `best.pt` to ONNX; wire into `side_scan.py` in Phase 2. Upgrade path to YOLOv8-seg instance segmentation is a Version 2 experiment, not yet started. |
 | **Multi-Sensor Fusion** | Confidence-weighted combination when auxiliary sensors (optical/bathymetry) exist. | Implemented (`marineguard/detection/fusion.py`) | Retain as accuracy booster when multi-modal data is available. |
 | **Confidence & Filtering** | Confidence recalibration (0–100%) and suppression of rock/shadow false hits. | Partially Implemented (Basic threshold in `side_scan.py`) | Implement shadow-ratio and aspect-ratio filter logic in Phase 2. |
 | **Geotagging** | Ping headers/metadata $\to$ latitude/longitude calculation using vehicle trajectory. | Partially Implemented (Hardcoded mock coordinates in harness) | Implement ping-header coordinate translation engine in Phase 3. |

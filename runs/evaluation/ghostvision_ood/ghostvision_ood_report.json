@@ -1,0 +1,210 @@
+{
+  "task": "real_sss_ood_false_positive_stress_test",
+  "scientific_notice": "This is an OOD/false-positive stress test, not a ground-truth ghost-net accuracy evaluation. GhostVision contains real SSS imagery but does not provide ghost-net ground truth for this evaluation.",
+  "model": {
+    "architecture": "YOLOv8n detection",
+    "initialization": "yolov8n.pt",
+    "checkpoint": "runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.pt",
+    "task": "detect",
+    "class_count": 1,
+    "classes": {
+      "0": "net"
+    },
+    "local_class_0": "net",
+    "marineguard_global_class_id": 29
+  },
+  "environment": {
+    "python": "3.14.5",
+    "torch": "2.14.0+cu126",
+    "ultralytics": "8.4.143",
+    "device": "cuda:0",
+    "device_name": "NVIDIA GeForce RTX 3050"
+  },
+  "inference": {
+    "conf": 0.25,
+    "imgsz": 640,
+    "device": 0,
+    "batch": 8,
+    "source": "C:\\MarineGuard-SSS\\GhostVision",
+    "training": false
+  },
+  "dataset": {
+    "name": "GhostVision / PINGEcosystem sss-crab-pot-detection-ds",
+    "path": "C:\\MarineGuard-SSS\\GhostVision",
+    "images_evaluated": 6674,
+    "splits": {
+      "train": 5721,
+      "valid": 555,
+      "test": 398
+    },
+    "annotation_classes_present": [
+      "Crab-Pot"
+    ],
+    "ghost_net_ground_truth": false
+  },
+  "results": {
+    "images_evaluated": 6674,
+    "images_with_predicted_net": 36,
+    "images_without_predicted_net": 6638,
+    "pct_images_with_predicted_net": 0.5394066526820497,
+    "pct_images_without_predicted_net": 99.46059334731795,
+    "total_predicted_net_detections": 40,
+    "detections_per_image_mean": 0.005993407252022775,
+    "confidence": {
+      "n": 40,
+      "min": 0.2520328760147095,
+      "mean": 0.40466650053858755,
+      "median": 0.33198530972003937,
+      "max": 0.8807897567749023,
+      "p25": 0.28449221700429916,
+      "p75": 0.48080868273973465,
+      "p90": 0.6255000472068788
+    },
+    "confidence_bins_count": {
+      "0.25-0.40": 26,
+      "0.40-0.60": 9,
+      "0.60-0.80": 3,
+      "0.80-1.00": 2
+    },
+    "relation_to_crabpot_annotation": {
+      "elsewhere": 34,
+      "elsewhere_no_crabpot_annotation": 3,
+      "near_crabpot_annotation": 3
+    },
+    "relation_definitions": {
+      "overlaps_crabpot_annotation": "IoU >= 0.3 with a Crab-Pot box",
+      "near_crabpot_annotation": "IoU < 0.3 and center distance <= 50.0 px",
+      "elsewhere": "a crab-pot annotation exists on the image but the predicted net is neither overlapping nor near",
+      "elsewhere_no_crabpot_annotation": "image has no crab-pot annotation"
+    },
+    "qualitative_note": "Crab-pot overlap is qualitative only. It is not ghost-net precision, recall, F1, or mAP. Predicted net detections on this dataset are predicted net detections on a real SSS OOD dataset without ghost-net ground truth."
+  },
+  "latency": {
+    "includes_warmup": false,
+    "warmup_note": "One valid-split image was predicted before timed evaluation.",
+    "total_eval_s": 66.80129670000315,
+    "ms_per_image": 10.0091844021581,
+    "per_split": {
+      "train": {
+        "elapsed_s": 56.991740199999185,
+        "ms_per_image": 9.961849361999509
+      },
+      "valid": {
+        "elapsed_s": 5.318081899997196,
+        "ms_per_image": 9.582129549544499
+      },
+      "test": {
+        "elapsed_s": 4.037465499997779,
+        "ms_per_image": 10.144385678386381
+      }
+    }
+  },
+  "per_split": {
+    "train": {
+      "images": 5721,
+      "images_with_predicted_net": 30,
+      "images_without_predicted_net": 5691,
+      "total_predicted_net": 32,
+      "elapsed_s": 56.991740199999185,
+      "latency_ms_per_image": 9.961849361999509,
+      "confidence": {
+        "n": 32,
+        "min": 0.2520328760147095,
+        "mean": 0.3658293532207608,
+        "median": 0.3237246423959732,
+        "max": 0.7200266718864441
+      }
+    },
+    "valid": {
+      "images": 555,
+      "images_with_predicted_net": 0,
+      "images_without_predicted_net": 555,
+      "total_predicted_net": 0,
+      "elapsed_s": 5.318081899997196,
+      "latency_ms_per_image": 9.582129549544499,
+      "confidence": {
+        "n": 0,
+        "min": null,
+        "mean": null,
+        "median": null,
+        "max": null
+      }
+    },
+    "test": {
+      "images": 398,
+      "images_with_predicted_net": 6,
+      "images_without_predicted_net": 392,
+      "total_predicted_net": 8,
+      "elapsed_s": 4.037465499997779,
+      "latency_ms_per_image": 10.144385678386381,
+      "confidence": {
+        "n": 8,
+        "min": 0.2653065323829651,
+        "mean": 0.5600150898098946,
+        "median": 0.5601217746734619,
+        "max": 0.8807897567749023
+      }
+    }
+  },
+  "examples": {
+    "highest_confidence": [
+      "test/Rec09_Sensor_Depth_wcp_ss_star_00021_png_jpg.rf.2866aa91a79454f1549e3c0bfbe8df7e.jpg",
+      "test/Rec09_Sensor_Depth_wcp_ss_port_00004_jpg.rf.aaaab34b32a88e481efe9f72cf05ac93.jpg",
+      "test/Rec9_wcp_ss_port_00037_png_jpg.rf.3ade22e50cf8b125edaa5c1bca8d6120.jpg",
+      "train/Rec16_wcp_ss_star_00022_png_jpg.rf.b3edd53d06221a3b1d2742d1b65ca08c.jpg",
+      "test/Rec09_Sensor_Depth_wcp_ss_star_00028_png_jpg.rf.64d1ea763ba782aa94a3eec7d1e60685.jpg",
+      "train/Rec13_wcp_ss_star_00031_png_jpg.rf.36ef05954a2c931a4a609e28ae2ffdd5.jpg",
+      "train/Rec19_wcp_ss_port_00051_png_jpg.rf.cee36f5746204b59de55f60059a522ad.jpg",
+      "train/Rec5_wcp_ss_port_00015_png_jpg.rf.f8eb9417ea43f7d59ea09d1ab293beaa.jpg",
+      "train/Rec5_wcp_ss_star_00026_png_jpg.rf.9fbaa3d455351bf42ea5117e78349391.jpg",
+      "train/Rec12_Sensor_Depth_wcp_ss_star_00042_png_jpg.rf.84631f340ea6655ae83466fdfa21f8f2.jpg"
+    ],
+    "medium_confidence": [
+      "test/Rec9_wcp_ss_port_00040_png_jpg.rf.cacbcf8a3558219ab5b12df0eef7374e.jpg",
+      "train/Rec4_wcp_ss_port_00012_png_jpg.rf.e2d7615f854b51a380a23ce0f374ad02.jpg",
+      "train/Rec6_wcp_ss_port_00029_png_jpg.rf.df74be5cc2dfcc61f7308cbbb4131570.jpg",
+      "train/Rec6_wcp_ss_port_00029_png_jpg.rf.fa1fab1e7b8763794610a35dac0e0051.jpg",
+      "train/Rec14_Sensor_Depth_wcp_ss_star_00017_png_jpg.rf.4da68b6798c6bc02cc45df9eac2bae45.jpg",
+      "train/Rec13_wcp_ss_star_00028_png_jpg.rf.a0d0436daec2d941f43667f0670afcc9.jpg",
+      "test/Rec9_wcp_ss_port_00031_png_jpg.rf.c31c71d3f3d72401ee963c43623d1143.jpg",
+      "train/Rec10_wcp_ss_star_00011_png_jpg.rf.5b105021fc3e2910cb90764e2181a502.jpg",
+      "train/Rec6_wcp_ss_port_00020_png_jpg.rf.a1e85d92e8fcc5809ae310a5f86c79e9.jpg",
+      "train/Rec6_wcp_ss_port_00068_png_jpg.rf.ff0ea19c6d6e4658f0b35bfd5c650def.jpg"
+    ],
+    "zero_detections": [
+      "train/BC_POST_T2_01_00_4_3_png_jpg.rf.75569a8f77225a4cd21ec5c7230cb3c9.jpg",
+      "train/Rec7_wcp_ss_port_00013_png_jpg.rf.bab5a22e8460e0298e43c0a1acda7303.jpg",
+      "train/BC_POST_T2_01_00_5_4_png_jpg.rf.4a39476980aacf3a49230265f4de7b21.jpg",
+      "train/Rec5_wcp_ss_port_00006_png_jpg.rf.19e88086868bebc08b51d93f7a257340.jpg",
+      "train/Rec16_wcp_ss_star_00027_png_jpg.rf.ef2d0966a5531ff461b1a41ce98c7239.jpg",
+      "train/Rec16_wcp_ss_star_00013_png_jpg.rf.52425cde8d369cc127f3a4ee3a64392a.jpg",
+      "train/Rec5_wcp_ss_star_00046_png_jpg.rf.a344ea0b910da6ad5eb1676ab9140bc7.jpg",
+      "train/BC_POST_T2_01_01_2_9_png_jpg.rf.b542cb1fcb12e85fffef44d3e7a90f2a.jpg",
+      "train/Rec10_wcp_ss_star_00018_png_jpg.rf.404a13ee5b3b3d603571cb473cffe8e7.jpg",
+      "valid/Contact_103_sslo_png_jpg.rf.53fe66a3739b5f18e390901f89cf481e.jpg"
+    ],
+    "note": "Cyan boxes (when present) are GhostVision crab-pot annotations for qualitative comparison only. Red boxes are predicted net. Crab pots are not ghost-net labels."
+  },
+  "outputs": {
+    "directory": "runs/evaluation/ghostvision_ood",
+    "predictions_json": "predictions.json",
+    "summary_json": "ghostvision_ood_report.json",
+    "annotated_images_with_detections": "annotated/",
+    "examples": "examples/"
+  },
+  "timestamp_utc": "2026-09-07T21:27:02.770759+00:00",
+  "verify": {
+    "checkpoint": "D:\\Marine Drive\\marineguard-mcp\\runs\\detect\\runs\\marineguard_sss_yolov8n_baseline\\weights\\best.pt",
+    "checkpoint_exists": true,
+    "torch": "2.14.0+cu126",
+    "cuda_available": true,
+    "cuda_device_count": 1,
+    "device0_name": "NVIDIA GeForce RTX 3050",
+    "task": "detect",
+    "class_count": 1,
+    "class_names": {
+      "0": "net"
+    },
+    "class0": "net"
+  }
+}

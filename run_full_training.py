@@ -1,24 +1,20 @@
+from pathlib import Path
 from ultralytics import YOLO
 
+REPO = Path(__file__).resolve().parent
+DATA = REPO / "data" / "processed" / "marineguard" / "data.yaml"
+RUNS = REPO / "runs"
 
-def main():
-    model = YOLO("yolov8n.pt")
+model = YOLO("yolov8n.pt")
 
-    model.train(
-        data=r"C:\aaaa\SIH\marineguard-mcp\data\processed\marineguard\data.yaml",
-        epochs=50,
-        imgsz=512,
-        batch=16,
-        device=0,
-        workers=0,
-        amp=True,
-        patience=10,
-        save=True,
-        plots=True,
-        project=r"C:\aaaa\SIH\marineguard-mcp\runs",
-        name="marineguard_full_512_b16",
-    )
+model.train(
+    data=str(DATA),
+    epochs=50,
+    imgsz=512,
+    batch=16,
+    device=0,
+    workers=0,
+    project=str(RUNS),
+    name="marineguard_full_512_b16-2",
+)
 
-
-if __name__ == "__main__":
-    main()

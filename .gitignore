@@ -8,11 +8,12 @@ __pycache__/
 venv/
 env/
 
-# Large dataset files
+# Large datasets
 data/raw/
 data/processed/marineguard/images/
 data/processed/marineguard/labels/
 data/processed/fls/labels/
+data/processed_v2/
 
 # Dataset image/archive files
 *.jpg
@@ -26,8 +27,18 @@ data/processed/fls/labels/
 *.cache
 
 # Training outputs
-runs/
+runs/*
+!runs/marineguard_full_512_b16-2/
+!runs/marineguard_full_512_b16-2/weights/
+!runs/marineguard_full_512_b16-2/weights/best.pt
+!runs/marineguard_v2_final/
+!runs/marineguard_v2_final/weights/
+!runs/marineguard_v2_final/weights/best.pt
+
+# Model/export files
 *.pt
+!runs/marineguard_full_512_b16-2/weights/best.pt
+!runs/marineguard_v2_final/weights/best.pt
 *.onnx
 
 # Logs
@@ -52,3 +63,72 @@ data/evidence/
 
 # Dependencies
 node_modules/
+
+# Member 2 SSS dataset images (Git LFS)
+!data/processed/marineguard_sss/images/
+!data/processed/marineguard_sss/images/train/
+!data/processed/marineguard_sss/images/val/
+!data/processed/marineguard_sss/images/test/
+!data/processed/marineguard_sss/images/train/*.jpg
+!data/processed/marineguard_sss/images/train/*.png
+!data/processed/marineguard_sss/images/val/*.jpg
+!data/processed/marineguard_sss/images/val/*.png
+!data/processed/marineguard_sss/images/test/*.jpg
+!data/processed/marineguard_sss/images/test/*.png
+
+# Member 2 SSS Experiment #1
+!runs/detect/
+!runs/detect/_train_exp2_augmented.py
+!runs/detect/runs/
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/args.yaml
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/results.csv
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/results.png
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/confusion_matrix.png
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/BoxPR_curve.png
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/BoxF1_curve.png
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/
+!runs/detect/runs/marineguard_sss_yolov8n_baseline/weights/best.pt
+
+# Member 2 SSS Experiment #2
+!runs/detect/runs/detect/
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/args.yaml
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/results.csv
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/results.png
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/confusion_matrix.png
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/BoxPR_curve.png
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/BoxF1_curve.png
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/exp2_training_summary.json
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/
+!runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/best.pt
+
+# Member 2 SeaClear segmentation
+!runs/seaclear_yolov8n_seg/
+!runs/seaclear_yolov8n_seg/training_summary.json
+!runs/seaclear_yolov8n_seg/onnx/
+!runs/seaclear_yolov8n_seg/onnx/best.onnx
+!runs/seaclear_yolov8n_seg/onnx/onnx_verification.json
+!runs/seaclear_yolov8n_seg/train/
+!runs/seaclear_yolov8n_seg/train/args.yaml
+!runs/seaclear_yolov8n_seg/train/results.csv
+!runs/seaclear_yolov8n_seg/train/results.png
+!runs/seaclear_yolov8n_seg/train/confusion_matrix.png
+!runs/seaclear_yolov8n_seg/train/BoxPR_curve.png
+!runs/seaclear_yolov8n_seg/train/BoxF1_curve.png
+!runs/seaclear_yolov8n_seg/train/MaskPR_curve.png
+!runs/seaclear_yolov8n_seg/train/MaskF1_curve.png
+!runs/seaclear_yolov8n_seg/train/weights/
+!runs/seaclear_yolov8n_seg/train/weights/best.pt
+
+# Member 2 GhostVision OOD reports
+!runs/evaluation/
+!runs/evaluation/ghostvision_ood/
+!runs/evaluation/ghostvision_ood/ghostvision_inspection.json
+!runs/evaluation/ghostvision_ood/ghostvision_ood_report.json
+!runs/evaluation/ghostvision_ood/predictions.json
+!runs/evaluation/ghostvision_ood/_inspect_ghostvision.py
+!runs/evaluation/ghostvision_ood/_run_ghostvision_ood.py
+!runs/eval/
+!runs/eval/ghostvision_ood/
+!runs/eval/ghostvision_ood/ghostvision_ood_summary.json

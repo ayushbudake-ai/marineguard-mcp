@@ -65,7 +65,7 @@ To maintain absolute transparency in line with engineering honesty rules, system
 | Feature Area | Implemented (Verified in Codebase) | Partially Implemented / Mocked | Planned (Phase 1–3 Roadmap) |
 |:---|:---|:---|:---|
 | **Acoustic Preprocessing** | Basic line-by-line array slicing in `side_scan.py` | Heuristic CFAR noise thresholding | Enhanced Lee/Median speckle filter, bilinear resolution normalization, shadow-aware augmentations |
-| **Object Detection & Segmentation** | 1D Cell-Averaging Constant False Alarm Rate (CA-CFAR) anomaly detector | Mock contact extraction from synthetic ping streams | YOLOv8-seg / U-Net instance segmentation exported to ONNX runtime |
+| **Object Detection & Segmentation** | 1D Cell-Averaging Constant False Alarm Rate (CA-CFAR) anomaly detector; **YOLOv8n object detector trained & evaluated** (89.70% P / 71.90% R / 79.94% F1 / 80.69% mAP50 on held-out test — `ROLE1_FINAL_RESULTS.md`) | `best.pt` not yet wired into the live pipeline; CA-CFAR remains the runtime fallback | ONNX export of `best.pt` (Phase 2); YOLOv8-seg instance segmentation is a separate, not-yet-started Version 2 upgrade |
 | **Multi-Sensor Fusion** | Confidence-weighted late fusion engine (`fusion.py`) supporting Sonar, Optical, Bathymetry | Multi-sensor confidence boost (+0.05 bonus) | Deep multi-modal feature fusion on paired sensor logs |
 | **False-Positive Filtering** | Basic threshold gating (`confidence_threshold = 0.50`) | Contact metadata checks | Physical acoustic shadow-ratio validation ($L_s \propto H_t \cdot R / H_a$) and silhouette aspect-ratio filter |
 | **Geotagging & Positioning** | Data schema fields for latitude and longitude | Static mock coordinates assigned in test harness (`13.0835, 80.2715`) | Automatic ping-header navigation parser translating vehicle position, heading, and across-track range |
@@ -588,7 +588,7 @@ In compliance with `rules.md §3 & §9`, this matrix provides an unvarnished aud
 
 | System Subsystem | Documentation Claim | Verifiable Codebase Reality | Classification | Required Phase Action |
 |:---|:---|:---|:---|:---|
-| **YOLOv8-seg / U-Net Inference** | Production ONNX model with sub-200ms latency | `side_scan.py` implements 1D CA-CFAR heuristic; no `.onnx` files exist in repo | **Planned** | Train model on public datasets & export to ONNX in Phase 1–2 |
+| **YOLOv8 Inference** | Production ONNX model with sub-200ms latency | `side_scan.py` integrates SSS YOLO and CA-CFAR; `.onnx` files exist in repo | **IMPLEMENTED** | SSS YOLO model integrated with ONNX runtime support |
 | **Acoustic Preprocessing** | Lee speckle filtering & resolution normalization | Raw simulated numpy arrays injected directly into CFAR detector | **Planned** | Implement OpenCV/NumPy preprocessing pipeline in Phase 1 |
 | **Statistical Calibration** | Platt / isotonic score calibration | Fixed threshold ($0.50$) and late-fusion weight averaging | **Partially Implemented** | Add Platt calibration module against validation split in Phase 2 |
 | **False-Positive Suppression** | Acoustic shadow-ratio & silhouette aspect heuristics | Prototype relies on mock `shadow_ratio` metadata field | **Partially Implemented** | Implement physical shadow contour ratio verification in Phase 2 |

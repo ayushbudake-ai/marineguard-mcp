@@ -60,13 +60,15 @@ Sonar imagery exhibits intense multiplicative speckle noise, non-uniform acousti
 
 ## 3. Model Design:
 
-* **Primary Model Architecture:** **YOLOv8-seg** (Instance Segmentation). Chosen for optimal speed/accuracy trade-off, real-time bounding box and segmentation mask extraction, and native ONNX runtime export capabilities.
+* **Current Trained Baseline:** **YOLOv8n** (Object Detection). Trained for 50 epochs at 512px on the unified 18,073-image dataset (12,652 train / 3,613 val / 1,808 test). Held-out test results: 89.70% precision, 71.90% recall, 79.94% calculated F1, 80.69% mAP50, 55.74% mAP50-95 — see `ROLE1_FINAL_RESULTS.md` for full evaluation detail. This is a bounding-box detector, not an instance-segmentation model, and its metrics must not be presented as segmentation metrics.
+* **Target Architecture (Not Yet Trained):** **YOLOv8-seg** (Instance Segmentation). Planned as a Version 2 upgrade for optimal speed/accuracy trade-off, real-time bounding box and segmentation mask extraction, and native ONNX runtime export capabilities. Moving from the current YOLOv8n baseline to YOLOv8-seg requires a new training run and a fresh held-out evaluation before it can replace the baseline — per `rules.md §3`, it does not inherit the YOLOv8n baseline's reported metrics.
 * **Alternative Considered:** **U-Net** (PyTorch). Excellent for dense pixel-level masks, but higher inference latency on embedded edge hardware; retained as an alternative if boundary precision requires improvement.
 * **Training Data Sources:** Public sonar and underwater debris datasets:
   * **Marine Debris FLS:** Forward-Looking Sonar acoustic debris imagery.
   * **UATD (Underwater Acoustic Target Dataset):** Side-scan sonar target repository.
-  * **SeaClear / TrashCan:** Optical and acoustic underwater debris benchmarks.
-* **Inference Runtime & Target:** ONNX Runtime / TensorRT on embedded hardware (NVIDIA Jetson). Batch size $1\text{--}4$, target inference latency $\le 200\text{ ms/frame}$.
+  * **SeaClear:** Optical and acoustic underwater debris benchmark. *(Used in the current trained baseline.)*
+  * **TrashCan:** Optical underwater debris benchmark. *(Not yet ingested — planned as a Version 2 addition; see `ROLE1_TO_ROLE2_HANDOFF.md`.)*
+* **Inference Runtime & Target:** ONNX Runtime / TensorRT on embedded hardware (NVIDIA Jetson). Batch size 1–4, target inference latency ≤ 200 ms/frame.
 
 ---
 

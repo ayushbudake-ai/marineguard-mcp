@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(r"data\processed\marineguard\labels\train")
+ROOT = Path(__file__).resolve().parent / "data" / "processed" / "marineguard" / "labels" / "train"
 
 FILES = [
     "seaclear_Cam1_16_23_22_10_11_2020.mp4_00574.txt",

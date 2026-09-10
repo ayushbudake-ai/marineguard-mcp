@@ -35,3 +35,21 @@ class EvidenceOverlayFormatter:
             <p><b>Removal Priority:</b> <span style="color: #f59e0b;">{target.removal_priority}</span> | <b>Entanglement Risk:</b> <span style="color: #ef4444;">{target.entanglement_risk}</span></p>
         </div>
         """
+
+    def format_detection_evidence_card(self, record_or_detection: Any) -> str:
+        """Format an evidence card for a FilteredDetection or EvidenceRecord."""
+        from marineguard.detection.evidence import format_evidence_card, DetectionEvidenceBuilder, EvidenceRecord
+        if isinstance(record_or_detection, EvidenceRecord):
+            return format_evidence_card(record_or_detection)
+        builder = DetectionEvidenceBuilder()
+        record = builder.build(record_or_detection)
+        return format_evidence_card(record)
+
+    def format_detection_evidence_html(self, record_or_detection: Any) -> str:
+        """Format an HTML evidence card for a FilteredDetection or EvidenceRecord."""
+        from marineguard.detection.evidence import format_evidence_html, DetectionEvidenceBuilder, EvidenceRecord
+        if isinstance(record_or_detection, EvidenceRecord):
+            return format_evidence_html(record_or_detection)
+        builder = DetectionEvidenceBuilder()
+        record = builder.build(record_or_detection)
+        return format_evidence_html(record)

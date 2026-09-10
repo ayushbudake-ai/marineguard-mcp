@@ -1,0 +1,92 @@
+{
+  "root": "C:\\MarineGuard-SSS\\GhostVision",
+  "root_exists": true,
+  "top_level": [
+    ".cache",
+    ".gitattributes",
+    ".gitignore",
+    "README.md",
+    "test",
+    "train",
+    "valid"
+  ],
+  "splits": {
+    "train": {
+      "image_count": 5721,
+      "jsonl_exists": true,
+      "jsonl_rows": 5721,
+      "other_files": [
+        "metadata.jsonl"
+      ],
+      "images_with_annotations": 4291,
+      "images_without_annotations": 1430,
+      "annotation_boxes": 7469,
+      "categories": {
+        "Crab-Pot": 7469
+      },
+      "missing_images_referenced_in_jsonl": [],
+      "images_not_in_jsonl": []
+    },
+    "valid": {
+      "image_count": 555,
+      "jsonl_exists": true,
+      "jsonl_rows": 555,
+      "other_files": [
+        "metadata.jsonl"
+      ],
+      "images_with_annotations": 502,
+      "images_without_annotations": 53,
+      "annotation_boxes": 1275,
+      "categories": {
+        "Crab-Pot": 1275
+      },
+      "missing_images_referenced_in_jsonl": [],
+      "images_not_in_jsonl": []
+    },
+    "test": {
+      "image_count": 398,
+      "jsonl_exists": true,
+      "jsonl_rows": 398,
+      "other_files": [
+        "metadata.jsonl"
+      ],
+      "images_with_annotations": 334,
+      "images_without_annotations": 64,
+      "annotation_boxes": 567,
+      "categories": {
+        "Crab-Pot": 567
+      },
+      "missing_images_referenced_in_jsonl": [],
+      "images_not_in_jsonl": []
+    }
+  },
+  "totals": {
+    "images": 6674,
+    "image_formats": {
+      "JPEG": 6674
+    },
+    "unique_resolutions": {
+      "640x640": 6674
+    },
+    "resolution_count": 1,
+    "corrupt_or_unopenable": [],
+    "hash_unreadable": [],
+    "duplicate_hash_groups": 0,
+    "duplicate_examples": {},
+    "annotation_format": "HuggingFace JSONL (metadata.jsonl) with objects.bbox xywh pixel coords and objects.category strings",
+    "bbox_sample": [
+      "sample bbox len=4 values=[315, 213, 49, 62.5]"
+    ],
+    "images_with_annotations": 5127,
+    "images_without_annotations": 1547,
+    "total_annotation_boxes": 9311,
+    "categories": {
+      "Crab-Pot": 9311
+    },
+    "existing_splits": [
+      "train",
+      "valid",
+      "test"
+    ]
+  }
+}
