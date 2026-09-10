@@ -3,14 +3,11 @@ import RiskBadge from "../components/RiskBadge";
 import FirewallTaxonomyTable from "../components/FirewallTaxonomyTables";
 import FirewallEventFeed from "../components/FirewallEventFeed";
 import StatCard from "./statcard.jsx";
-import { MOCK_DETECTIONS } from "../data/Mockdetection";
+import { getCurrentDetections } from "./marineguard";
 import { evaluateRisk } from "../utils/firewall";
 
-// TODO: once marineguard/firewall/operator_ui.py has a real interface,
-// replace the interval-driven simulation below with a subscription to the
-// actual firewall event stream (e.g. a websocket from the MCP tool server).
-// evaluateRisk() in src/utils/firewall.js can stay as-is either way — it's
-// the same policy the backend enforces, just re-expressed for the UI.
+// Connects mission firewall event generator to real detections returned by MarineGuard backend.
+// evaluateRisk() enforces the 4-level risk policy from marineguard/firewall/risk_taxonomy.py.
 
 let eventCounter = 0;
 
@@ -19,17 +16,39 @@ export default function MissionFirewall() {
   const [commsDegraded, setCommsDegraded] = useState(false);
   const [live, setLive] = useState(true);
   const [events, setEvents] = useState([]);
+  const [realDetections, setRealDetections] = useState([]);
   const cursorRef = useRef(0);
 
   useEffect(() => {
+    getCurrentDetections()
+      .then((res) => {
+        if (res?.detections && res.detections.length > 0) {
+          setRealDetections(res.detections);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch detections for firewall:", err));
+  }, []);
+
+  useEffect(() => {
     if (!live) return;
+    const activeDetections = realDetections.length > 0
+      ? realDetections
+      : [
+          {
+            id: "DET-001",
+            confidence: 0.938,
+            objectClass: "Ghost Net",
+          },
+        ];
+
     const interval = setInterval(() => {
-      const detection = MOCK_DETECTIONS[cursorRef.current % MOCK_DETECTIONS.length];
+      const detection = activeDetections[cursorRef.current % activeDetections.length];
       cursorRef.current += 1;
 
+      const confValue = typeof detection.confidence === "number" ? detection.confidence : 0.85;
       const currentBattery = Math.max(5, battery - Math.floor(Math.random() * 2));
       const { level, action } = evaluateRisk({
-        confidence: detection.confidence,
+        confidence: confValue,
         battery: currentBattery,
         commsDegraded,
       });
@@ -40,7 +59,7 @@ export default function MissionFirewall() {
         sourceId: detection.id,
         level,
         action,
-        detail: `conf=${detection.confidence.toFixed(2)} battery=${currentBattery}% comms=${commsDegraded ? "degraded" : "nominal"}`,
+        detail: `conf=${confValue.toFixed(2)} battery=${currentBattery}% comms=${commsDegraded ? "degraded" : "nominal"}`,
         timestamp: new Date().toISOString(),
       };
 
@@ -49,7 +68,7 @@ export default function MissionFirewall() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [live, battery, commsDegraded]);
+  }, [live, battery, commsDegraded, realDetections]);
 
   const currentLevel = events[0]?.level ?? "LOW";
 

@@ -41,5 +41,14 @@ runs/
 .DS_Store
 Thumbs.db
 
-#
+# Temporary and scratch files
+scratch/
+data/uploads/
+data/evidence/
+
+# Whitelist demo SSS assets
+!data/demo_sss/
+!data/demo_sss/**
+
+# Dependencies
 node_modules/

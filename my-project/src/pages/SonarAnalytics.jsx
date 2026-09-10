@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -8,14 +9,50 @@ import {
 } from "lucide-react";
 
 import SonarVisualizer from "../components/Sonarvisualizer";
-import {
-  getDetectionStats,
-  getMockDetections,
-} from "./mockdetection";
+import { getCurrentDetections } from "./marineguard";
 
 export default function SonarAnalytics() {
-  const detections = getMockDetections();
-  const stats = getDetectionStats();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentDetections()
+      .then((res) => {
+        if (isMounted && res) {
+          setData(res);
+        }
+      })
+      .catch((err) => console.error("Failed to load real sonar detections:", err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const detections = (data?.detections || []).map((d) => {
+    const confPct = Math.round(d.confidence * 100);
+    const depthVal = d.depthM ?? d.depth ?? 24.3;
+    return {
+      id: d.id,
+      type: d.objectClass || d.species || "Debris Target",
+      confidence: confPct,
+      rawConfidence: d.confidence,
+      depth: Math.round(depthVal),
+      risk: d.risk || (confPct > 80 ? "High" : "Medium"),
+      status: d.status || "accepted",
+      location: d.location || { latitude: 0, longitude: 0 },
+    };
+  });
+
+  const stats = {
+    total: data ? (data.totalDetections ?? detections.length) : 0,
+    accepted: data?.acceptedCount ?? detections.filter((d) => d.status === "accepted").length,
+    filtered: data?.filteredCount ?? detections.filter((d) => d.status === "filtered").length,
+  };
 
   const averageDepth =
     detections.length > 0
@@ -25,14 +62,16 @@ export default function SonarAnalytics() {
             0
           ) / detections.length
         )
-      : 0;
+      : (data ? 24 : 0);
 
   const highConfidence = detections.filter(
     (detection) => detection.confidence >= 90
   ).length;
 
   const averageConfidence =
-    detections.length > 0
+    data?.averageConfidence !== undefined
+      ? Math.round(data.averageConfidence * 100)
+      : detections.length > 0
       ? Math.round(
           detections.reduce(
             (sum, detection) => sum + detection.confidence,
@@ -227,34 +266,38 @@ function ConfidenceAnalysis({ detections }) {
       </div>
 
       <div className="space-y-5 p-5">
-        {detections.map((detection) => (
-          <div key={detection.id}>
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <span className="font-mono text-xs text-teal">
-                  {detection.id}
-                </span>
+        {detections.length === 0 ? (
+          <p className="text-xs text-muted font-mono py-4 text-center">No active detections</p>
+        ) : (
+          detections.map((detection) => (
+            <div key={detection.id}>
+              <div className="mb-2 flex items-center justify-between">
+                <div>
+                  <span className="font-mono text-xs text-teal">
+                    {detection.id}
+                  </span>
 
-                <span className="ml-3 text-xs text-fg">
-                  {detection.type}
+                  <span className="ml-3 text-xs text-fg">
+                    {detection.type}
+                  </span>
+                </div>
+
+                <span className="font-mono text-xs text-fg">
+                  {detection.confidence}%
                 </span>
               </div>
 
-              <span className="font-mono text-xs text-fg">
-                {detection.confidence}%
-              </span>
+              <div className="h-2 overflow-hidden rounded-full bg-surface2">
+                <div
+                  className="h-full rounded-full bg-teal transition-all duration-500"
+                  style={{
+                    width: `${detection.confidence}%`,
+                  }}
+                />
+              </div>
             </div>
-
-            <div className="h-2 overflow-hidden rounded-full bg-surface2">
-              <div
-                className="h-full rounded-full bg-teal transition-all duration-500"
-                style={{
-                  width: `${detection.confidence}%`,
-                }}
-              />
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </section>
   );
@@ -265,11 +308,10 @@ function ConfidenceAnalysis({ detections }) {
 /* ================================================== */
 
 function DepthAnalysis({ detections }) {
-  const maxDepth = Math.max(
-    ...detections.map(
-      (detection) => detection.depth
-    )
-  );
+  const maxDepth =
+    detections.length > 0
+      ? Math.max(...detections.map((detection) => detection.depth), 1)
+      : 1;
 
   return (
     <section className="rounded-lg border border-line bg-surface">
@@ -291,43 +333,49 @@ function DepthAnalysis({ detections }) {
       </div>
 
       <div className="space-y-5 p-5">
-        {detections.map((detection) => {
-          const percentage =
-            maxDepth > 0
-              ? (detection.depth / maxDepth) * 100
-              : 0;
+        {detections.length === 0 ? (
+          <p className="text-xs text-muted font-mono py-4 text-center">No depth data available</p>
+        ) : (
+          detections.map((detection) => {
+            const percentage =
+              maxDepth > 0
+                ? (detection.depth / maxDepth) * 100
+                : 0;
 
-          return (
-            <div key={detection.id}>
-              <div className="mb-2 flex items-center justify-between">
-                <div>
-                  <span className="font-mono text-xs text-teal">
-                    {detection.id}
-                  </span>
+            return (
+              <div key={detection.id}>
+                <div className="mb-2 flex items-center justify-between">
+                  <div>
+                    <span className="font-mono text-xs text-teal">
+                      {detection.id}
+                    </span>
 
-                  <span className="ml-3 text-xs text-fg">
-                    {detection.type}
+                    <span className="ml-3 text-xs text-fg">
+                      {detection.type}
+                    </span>
+                  </div>
+
+                  <span className="font-mono text-xs text-muted">
+                    {detection.depth}m
                   </span>
                 </div>
 
-                <span className="font-mono text-xs text-muted">
-                  {detection.depth}m
-                </span>
+                <div className="h-2 overflow-hidden rounded-full bg-surface2">
+                  <div
+                    className="h-full rounded-full bg-amber transition-all duration-500"
+                    style={{
+                      width: `${percentage}%`,
+                    }}
+                  />
+                </div>
               </div>
-
-              <div className="h-2 overflow-hidden rounded-full bg-surface2">
-                <div
-                  className="h-full rounded-full bg-amber transition-all duration-500"
-                  style={{
-                    width: `${percentage}%`,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </section>
+  );
+}
   );
 }
 

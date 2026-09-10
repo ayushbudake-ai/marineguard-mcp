@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ghost_net_contact_01",
+    "name": "Ghost Net Contact #1",
+    "description": "Recorded side-scan sonar waterfall crop showing acoustic shadow & highlight cluster of entangled nylon net.",
+    "file": "ghost_net_contact_01.png",
+    "sensor": "Side-Scan Sonar",
+    "gps": [13.0835, 80.2715],
+    "depth_m": 24.3
+  },
+  {
+    "id": "ghost_net_contact_02",
+    "name": "Ghost Net Contact #2",
+    "description": "Recorded high-resolution SSS sonar frame with heavy net acoustic backscatter.",
+    "file": "ghost_net_contact_02.png",
+    "sensor": "Side-Scan Sonar",
+    "gps": [13.0842, 80.2728],
+    "depth_m": 25.1
+  },
+  {
+    "id": "background_seabed",
+    "name": "Background Seabed Noise",
+    "description": "Negative control sample — unannotated seabed acoustic texture with ripple patterns.",
+    "file": "background_seabed.png",
+    "sensor": "Side-Scan Sonar",
+    "gps": null,
+    "depth_m": 22.0
+  }
+]

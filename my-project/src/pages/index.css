@@ -2,15 +2,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #0a1418;
-  --color-surface: #101c22;
-  --color-surface2: #16232b;
-  --color-line: #20343c;
-  --color-fg: #dce8e8;
-  --color-muted: #7c96a0;
-  --color-teal: #3fb8af;
-  --color-amber: #e8a33d;
-  --color-coral: #e2574c;
+  --color-ink: #060f14;
+  --color-surface: #0d1a22;
+  --color-surface2: #142531;
+  --color-line: #1e3646;
+  --color-fg: #e2f1f5;
+  --color-muted: #7e9ca8;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-amber: #fbbf24;
+  --color-coral: #fb7185;
   --font-sans: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -20,25 +21,51 @@ html {
 }
 
 body {
-  @apply bg-ink text-fg font-sans antialiased;
+  @apply bg-ink text-fg font-sans antialiased selection:bg-teal/30 selection:text-teal;
+  background-image: 
+    radial-gradient(ellipse at 20% 0%, rgba(34, 211, 238, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(45, 212, 191, 0.03) 0%, transparent 50%);
+  background-attachment: fixed;
 }
 
 /* Thin, chart-plotter style scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #20343c;
-  border-radius: 0;
+  background: #1e3646;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2dd4bf;
 }
 
 :focus-visible {
-  outline: 2px solid #3fb8af;
+  outline: 2px solid #2dd4bf;
   outline-offset: 2px;
+}
+
+/* Sonar Scan Line Animation */
+@keyframes sonar-sweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(1000%);
+    opacity: 0;
+  }
+}
+
+.animate-sonar-sweep {
+  animation: sonar-sweep 4s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

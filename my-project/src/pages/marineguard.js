@@ -1,97 +1,139 @@
 // -----------------------------------------------------------------------
-// MarineGuard API layer
-// -----------------------------------------------------------------------
-// The marineguard-mcp repo currently exposes the pipeline through an MCP
-// tool server (marineguard/mcp_server.py) and a Streamlit app — there is
-// no REST API yet for this React UI to call. Every function below is
-// mocked so the dashboard is fully clickable today.
-//
-// TODO when the backend exists: replace each function body with a
-// `fetch("/api/...")` call. Keep the same function names and return
-// shapes so no component code has to change. A minimal FastAPI wrapper
-// around marineguard/pipeline/inference.py would map naturally to these
-// four endpoints: POST /upload, POST /detect, GET /metrics, POST /reports
+// MarineGuard Real API Client Layer
+// Connects React UI to FastAPI Backend Bridge (http://127.0.0.1:8000)
 // -----------------------------------------------------------------------
 
-import { MOCK_DETECTIONS, MOCK_METRICS, MOCK_REPORTS } from "../data/Mockdetection";
+const API_BASE = "/api";
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export async function uploadSurveyFile(file) {
-  await delay(600);
-  // TODO: const form = new FormData(); form.append("file", file);
-  // return fetch("/api/upload", { method: "POST", body: form }).then(r => r.json());
-  return { fileId: "mock-file-" + Date.now(), filename: file.name, sizeBytes: file.size };
+export async function checkHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    return {
+      status: "unavailable",
+      service: "MarineGuard MCP",
+      sss_model: "offline",
+      message: err.message,
+      roles: {},
+    };
+  }
 }
 
-export async function runDetection({ fileId, confidenceThreshold }) {
-  await delay(1400);
-  // TODO: return fetch("/api/detect", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ fileId, confidenceThreshold }),
-  // }).then(r => r.json());
+export async function fetchDemoSamples() {
+  try {
+    const res = await fetch(`${API_BASE}/demo-samples`);
+    if (!res.ok) {
+      // Fallback to /api/samples if needed
+      const fallbackRes = await fetch(`${API_BASE}/samples`);
+      if (!fallbackRes.ok) throw new Error(`HTTP error: ${res.status}`);
+      const data = await fallbackRes.json();
+      return data.samples || [];
+    }
+    const data = await res.json();
+    return data.samples || [];
+  } catch (err) {
+    console.error("Failed to fetch demo samples:", err);
+    return [];
+  }
+}
 
-  const total = MOCK_DETECTIONS.length;
-  const accepted = MOCK_DETECTIONS.filter((d) => {
-    const conf = d.confidence > 1 ? d.confidence / 100 : d.confidence;
-    return conf >= confidenceThreshold;
+export async function uploadSurveyFile(file, confidenceThreshold = 0.75) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("confidenceThreshold", confidenceThreshold.toString());
+
+  const res = await fetch(`${API_BASE}/upload`, {
+    method: "POST",
+    body: form,
   });
-  const filtered = total - accepted.length;
-  const avgConfidence =
-    accepted.reduce((sum, d) => {
-      const conf = d.confidence > 1 ? d.confidence / 100 : d.confidence;
-      return sum + conf;
-    }, 0) / (accepted.length || 1);
 
-  return {
-    fileId,
-    confidenceThreshold,
-    totalDetections: total,
-    acceptedCount: accepted.length,
-    filteredCount: filtered,
-    averageConfidence: Number(avgConfidence.toFixed(2)),
-    processingTimeMs: 1180,
-    detections: MOCK_DETECTIONS.map((d) => {
-      const conf = d.confidence > 1 ? d.confidence / 100 : d.confidence;
-      const lat = typeof d.lat === "number" ? d.lat : typeof d.latitude === "number" ? d.latitude : d.location?.latitude;
-      const lng = typeof d.lng === "number" ? d.lng : typeof d.longitude === "number" ? d.longitude : d.location?.longitude;
-      const objectClass = d.objectClass || d.type || d.category || "Marine Debris";
-      return {
-        ...d,
-        confidence: conf,
-        objectClass,
-        lat,
-        lng,
-        status: conf >= confidenceThreshold ? "accepted" : "filtered",
-      };
+  if (!res.ok) {
+    let detail = `Upload failed with HTTP ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson.detail) detail = errJson.detail;
+    } catch (_) {}
+    throw new Error(detail);
+  }
+
+  return await res.json();
+}
+
+export async function runDetection({ fileId, sampleKey, confidenceThreshold = 0.75 }) {
+  const res = await fetch(`${API_BASE}/detect`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      fileId,
+      sampleKey,
+      confidenceThreshold,
     }),
-  };
+  });
+
+  if (!res.ok) {
+    throw new Error(`Detection pipeline failed with HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+export async function getCurrentDetections() {
+  try {
+    const res = await fetch(`${API_BASE}/detections/current`);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch current detections:", err);
+    return null;
+  }
+}
+
+export async function getDetectionById(detectionId) {
+  const res = await fetch(`${API_BASE}/detections/${detectionId}`);
+  if (!res.ok) {
+    throw new Error(`Detection ${detectionId} not found`);
+  }
+  return await res.json();
 }
 
 export async function fetchMetrics() {
-  await delay(400);
-  // TODO: return fetch("/api/metrics").then(r => r.json());
-  return MOCK_METRICS;
+  try {
+    const res = await fetch(`${API_BASE}/metrics`);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch metrics:", err);
+    return null;
+  }
 }
 
 export async function fetchReports() {
-  await delay(300);
-  // TODO: return fetch("/api/reports").then(r => r.json());
-  return MOCK_REPORTS;
+  try {
+    const res = await fetch(`${API_BASE}/reports`);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch reports:", err);
+    return [];
+  }
 }
 
-export async function generateReport({ format }) {
-  await delay(900);
-  // TODO: return fetch("/api/reports", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ format }),
-  // }).then(r => r.json());
-  return {
-    id: "RPT-" + Date.now(),
-    format,
-    createdAt: new Date().toISOString(),
-    downloadUrl: null, // no real file until the backend generates one
-  };
+export async function generateReport({ format = "PDF" }) {
+  const res = await fetch(`${API_BASE}/reports`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ format }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Report generation failed with HTTP ${res.status}`);
+  }
+
+  return await res.json();
 }

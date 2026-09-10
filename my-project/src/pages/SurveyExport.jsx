@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Download,
   FileArchive,
@@ -9,14 +10,67 @@ import {
 } from "lucide-react";
 
 import ExportCard from "../components/ExportCard";
-import {
-  getDetectionStats,
-  getMockDetections,
-} from "./mockdetection";
+import { getCurrentDetections } from "./marineguard";
 
 export default function SurveyExport() {
-  const detections = getMockDetections();
-  const stats = getDetectionStats();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentDetections()
+      .then((res) => {
+        if (isMounted && res) setData(res);
+      })
+      .catch((err) => console.error("Failed to load detections for export:", err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const detections = (data?.detections || []).map((d) => {
+    const confPct = Math.round(d.confidence * 100);
+    const depthVal = d.depthM ?? d.depth ?? 24.3;
+    const lat = d.lat ?? d.location?.latitude ?? "N/A";
+    const lng = d.lng ?? d.location?.longitude ?? "N/A";
+    return {
+      id: d.id,
+      type: d.objectClass || d.species || "Debris Target",
+      category: d.species || "Marine Debris",
+      confidence: confPct,
+      rawConfidence: d.confidence,
+      risk: d.risk || (confPct > 80 ? "High" : "Medium"),
+      location: { latitude: lat, longitude: lng },
+      depth: Math.round(depthVal),
+      size: d.bboxArea ? `${Math.round(d.bboxArea)} px²` : "Medium",
+      quantity: 1,
+      sensor: "YOLOv8n SSS Sensor",
+      status: d.status === "accepted" ? "Confirmed" : "Filtered",
+      timestamp: new Date().toISOString(),
+      bbox: d.bbox,
+      rejectionReason: d.rejectionReason,
+    };
+  });
+
+  const stats = {
+    total: data ? (data.totalDetections ?? detections.length) : 0,
+    high: detections.filter((d) => d.risk === "High" || d.risk === "CRITICAL").length,
+    medium: detections.filter((d) => d.risk === "Medium").length,
+    low: detections.filter((d) => d.risk === "Low").length,
+    confirmed: data?.acceptedCount ?? detections.filter((d) => d.status === "Confirmed").length,
+    review: data?.filteredCount ?? detections.filter((d) => d.status === "Filtered").length,
+    averageConfidence:
+      data?.averageConfidence !== undefined
+        ? Math.round(data.averageConfidence * 100)
+        : detections.length > 0
+        ? Math.round(
+            detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length
+          )
+        : 0,
+  };
 
   const exportDetectionsAsCSV = () => {
     const headers = [

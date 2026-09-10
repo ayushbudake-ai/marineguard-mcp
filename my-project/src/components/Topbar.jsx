@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Bell,
   CircleHelp,
@@ -16,7 +17,7 @@ export default function Topbar() {
           </p>
 
           <p className="text-sm font-medium text-fg">
-            Ministry of Earth Sciences
+            Ministry of Earth Sciences (MoES)
           </p>
         </div>
       </div>
@@ -24,14 +25,14 @@ export default function Topbar() {
       {/* Center status */}
       <div className="hidden items-center gap-2 rounded-md border border-line bg-surface2 px-4 py-2 md:flex">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-50" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
         </span>
 
         <Radio size={14} className="text-teal" />
 
         <span className="font-mono text-[11px] tracking-wide text-teal">
-          AUV-01 ONLINE
+          REAL SSS YOLOv8n ACTIVE
         </span>
       </div>
 
@@ -54,7 +55,7 @@ export default function Topbar() {
         >
           <Bell size={18} />
 
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-amber" />
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
         </button>
 
         {/* User */}

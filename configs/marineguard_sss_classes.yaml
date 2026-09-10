@@ -1,0 +1,55 @@
+# MarineGuard SSS Model Taxonomy & Dataset Audit
+# Product Model Identity: SSS MODEL (Unified Side-Scan Sonar Detection Engine)
+# Authoritative Checkpoint: runs/detect/runs/detect/marineguard_sss_yolov8n_exp2_augmented/weights/best.pt
+# Checkpoint SHA-256: c9fd27940b9b1a28834002dcbc40d1306c3e56650309b536aecd9862236bd7d2
+
+model_identity:
+  user_facing_name: "SSS MODEL"
+  subtitle: "Unified Side-Scan Sonar Detection Engine"
+  architecture: "YOLOv8n"
+  input_domain: "Side-Scan Sonar (SSS) Imagery"
+  post_processor: "Role 3 DetectionFilter"
+  geolocation: "Recorded SSS metadata only (no synthetic/browser GPS)"
+
+# Authoritative Classes loaded into current SSS MODEL weights
+active_sss_classes:
+  0:
+    source_class: "net"
+    marineguard_sss_class: "ghost_net"
+    display_name: "Ghost Net"
+    status: "READY"
+    verified_weights: true
+    evidence_boxes: 190
+
+# Audit of requested classes not supported by genuine SSS training data
+requested_sss_classes_audit:
+  bottle:
+    status: "NOT SUPPORTED BY CURRENT SSS DATA"
+    genuine_sss_images: 0
+    genuine_sss_boxes: 0
+    reason: "Found in Forward-Looking Sonar (FLS/UATD) and optical sets; zero genuine Side-Scan Sonar training samples exist."
+    required_data: "Minimum 150 geo-referenced SSS waterfall crops depicting discarded bottles on seabed."
+  can:
+    status: "NOT SUPPORTED BY CURRENT SSS DATA"
+    genuine_sss_images: 0
+    genuine_sss_boxes: 0
+    reason: "Found in FLS/optical sets only; no genuine SSS acoustic reflections for metallic beverage cans exist in repo."
+    required_data: "Minimum 150 SSS acoustic shadow/highlight annotations of metallic debris."
+  plastic:
+    status: "NOT SUPPORTED BY CURRENT SSS DATA"
+    genuine_sss_images: 0
+    genuine_sss_boxes: 0
+    reason: "FLS/optical taxonomy contains generic plastic, but no SSS waterfall imagery with plastic debris exists."
+    required_data: "Minimum 200 high-frequency SSS sonar recordings of plastic sheeting/containers."
+  tire:
+    status: "NOT SUPPORTED BY CURRENT SSS DATA"
+    genuine_sss_images: 0
+    genuine_sss_boxes: 0
+    reason: "FLS config defines tire, but zero genuine SSS tire images are present in repo."
+    required_data: "Minimum 100 circular acoustic highlight/shadow SSS examples of submerged tires."
+  other_debris:
+    status: "NOT SUPPORTED BY CURRENT SSS DATA"
+    genuine_sss_images: 0
+    genuine_sss_boxes: 0
+    reason: "No generalized non-net marine debris annotations present in SSS data."
+    required_data: "Multi-class sonar benchmark split with bounding boxes adhering to standard YOLO format."

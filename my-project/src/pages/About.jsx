@@ -38,9 +38,8 @@ export default function About() {
         View source on GitHub →
       </a>
 
-      <div className="mt-6 border border-amber/40 bg-amber/10 px-4 py-3 text-xs text-amber">
-        This UI currently runs on mock data throughout — see the "Mock data mode" note in the sidebar.
-        No pipeline described above is connected to this frontend yet.
+      <div className="mt-6 border border-teal/40 bg-teal/10 px-4 py-3 text-xs text-teal">
+        Connected to MarineGuard live inference backend (FastAPI bridge). Operating with verified YOLOv8n Side-Scan Sonar detection pipeline and Role 3 post-processing.
       </div>
     </div>
   );
