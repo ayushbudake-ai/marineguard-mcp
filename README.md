@@ -137,49 +137,93 @@ V1 class IDs must not be reordered.
 
 ---
 
-# 📁 Repository Structure:
+# 📁 Repository Structure & Organization
 
 ```text
 marineguard-mcp/
 │
-├── data/
-│   └── raw/
-│       └── seaclear/
+├── 🎨 FRONTEND / UI LAYER
+│   ├── streamlit_demo.py               # Streamlit post-mission analysis dashboard
+│   ├── .streamlit/config.toml          # Streamlit UI theme and server configuration
+│   ├── my-react-router-app/            # Modern React Router v7 + Tailwind Web Application
+│   │   ├── app/                        # React routes, components & UI views
+│   │   ├── public/                     # Public web assets
+│   │   ├── package.json                # Frontend dependencies
+│   │   └── vite.config.ts              # Vite build setup
+│   ├── my-project/                     # Standalone / alternate web frontend package
+│   └── docs/demo.html, index.html      # Interactive static web demonstration
 │
-├── docs/
-│   ├── HANDOFF_CONTRACT.md
-│   ├── PROJECT_DOCUMENTATION.md
-│   ├── ROLE_DEPENDENCY_MATRIX.md
-│   ├── MODEL_REGISTRY.md
-│   ├── DETECTION_SCHEMA.json
-│   ├── V1_DATASET_MANIFEST.md
-│   └── ROLE1_HANDOFF_CHECKLIST.md
+├── 🔌 BACKEND & API LAYER
+│   ├── api_server.py                   # Production FastAPI bridge (REST API for UI)
+│   ├── marineguard/
+│   │   ├── mcp_server.py               # Model Context Protocol (MCP) tool server
+│   │   ├── schemas.py                  # Pydantic data schemas & contracts
+│   │   └── api/                        # API route handlers and utilities
+│   └── config.yaml                     # System & service configuration
 │
-├── marineguard/
+├── 🧠 AI & DETECTION PIPELINE
+│   ├── marineguard/detection/
+│   │   ├── sss_yolo_adapter.py         # Authoritative YOLOv8n SSS detection wrapper
+│   │   ├── side_scan.py                # Side-scan sonar image detector & preprocessor
+│   │   ├── detector.py                 # Optical debris detector
+│   │   └── model_loader.py             # Model checkpoint loader & integrity verifier
+│   ├── marineguard/
+│   │   ├── v1_detector.py              # Frozen V1 YOLOv8n baseline detector
+│   │   └── v2_detector.py              # V2 experimental detection wrapper
+│   ├── models/                         # Serialized model weights & ONNX checkpoints
+│   ├── runs/marineguard_full_512_b16-2/# Authoritative V1 training run & best.pt weights
+│   ├── export_onnx.py                  # ONNX export script
+│   └── verify_onnx.py                  # ONNX numerical parity verification
 │
-├── tests/
+├── 🛡️ POST-PROCESSING & FILTERING
+│   ├── marineguard/trace/
+│   │   └── confidence_filter.py        # False-positive filtering (shadow & aspect ratios)
+│   ├── marineguard/compiler/
+│   │   └── filtering_layer.py          # Accepted vs Rejected classification pipeline
+│   ├── marineguard/confidence.py       # Platt / Isotonic confidence calibration
+│   └── marineguard/evidence.py         # Visual evidence crop generator & bounding boxes
 │
-├── runs/
-│   └── marineguard_full_512_b16-2/
-│       └── weights/
-│           └── best.pt
+├── 📄 REPORTING & GIS EXPORTERS
+│   └── marineguard/exporters/
+│       ├── pdf_exporter.py             # ReportLab automated PDF mission report generator
+│       ├── geojson_exporter.py         # Maritime GIS GeoJSON layer exporter
+│       ├── json_csv_report.py          # Structured JSON & CSV contact log exporter
+│       ├── s100_exporter.py            # S-100 / S-124 maritime navigation hazard notices
+│       └── coordinate_validator.py     # Geographic latitude/longitude range validation
 │
-├── convert_fls.py
-├── convert_uatd.py
-├── convert_seaclear.py
-├── create_combined_dataset.py
-├── validate_marineguard.py
+├── 📊 DATASET & TRAINING PREPROCESSING
+│   ├── convert_fls.py                  # FLS sonar dataset conversion to YOLO format
+│   ├── convert_uatd.py                 # UATD underwater dataset conversion
+│   ├── convert_seaclear.py             # SeaClear dataset converter
+│   ├── create_combined_dataset.py      # Unified 50-class combined dataset generator
+│   ├── marineguard_classes.yaml        # 50-class authoritative taxonomy
+│   ├── unified_classes.yaml            # Unified label mappings
+│   ├── validate_marineguard.py         # Dataset integrity & label validation
+│   ├── train_yolov8_seg.py             # YOLOv8 segmentation training script
+│   └── run_full_training.py            # Full dataset training executor
 │
-├── run_full_training.py
-├── run_sanity.py
+├── 🧪 TESTING & EVALUATION SUITE
+│   ├── tests/
+│   │   ├── test_api.py                 # FastAPI endpoint tests
+│   │   ├── test_confidence.py          # Confidence calibration tests
+│   │   ├── test_detection.py           # Optical & sonar detection tests
+│   │   ├── test_evidence.py            # Evidence extraction tests
+│   │   ├── test_exporters.py           # PDF, CSV, JSON, GeoJSON exporter tests
+│   │   ├── test_filtering.py           # Filter rule & threshold tests
+│   │   ├── test_mcp_detection.py       # MCP server tool tests
+│   │   ├── test_optical_onnx.py        # ONNX inference tests
+│   │   ├── test_side_scan.py           # Side-scan sonar pipeline tests
+│   │   └── test_ui_and_eval.py         # UI and end-to-end evaluation tests
+│   ├── eval.py, eval_detection.py      # Evaluation and precision/recall metrics
+│   ├── benchmark_v1_latency.py         # Model inference latency benchmarking
+│   └── v1_latency_benchmark.json       # Measured latency metrics
 │
-├── marineguard_classes.yaml
-├── unified_classes.yaml
-├── requirements.txt
-│
-├── ROLE1_FINAL_RESULTS.md
-├── ROLE1_TO_ROLE2_HANDOFF.md
-└── README.md
+└── 📚 DOCUMENTATION
+    ├── README.md                       # Main project overview & benchmark metrics
+    ├── AGENTS.md / agents.md           # Role boundaries, execution rules & scope guidelines
+    ├── docs/PROJECT_DOCUMENTATION.md   # Deep architectural specification
+    ├── docs/HANDOFF_CONTRACT.md        # Inter-role contracts & interfaces
+    └── docs/ROLE_*.md                  # Individual role handoff & verification audits
 ```
 
 ---
