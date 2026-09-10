@@ -1,0 +1,50 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0a1418;
+  --color-surface: #101c22;
+  --color-surface2: #16232b;
+  --color-line: #20343c;
+  --color-fg: #dce8e8;
+  --color-muted: #7c96a0;
+  --color-teal: #3fb8af;
+  --color-amber: #e8a33d;
+  --color-coral: #e2574c;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-ink text-fg font-sans antialiased;
+}
+
+/* Thin, chart-plotter style scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #20343c;
+  border-radius: 0;
+}
+
+:focus-visible {
+  outline: 2px solid #3fb8af;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
