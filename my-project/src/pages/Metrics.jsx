@@ -20,10 +20,10 @@ export default function Metrics() {
         <div className="mt-8 text-sm text-muted">Loading metrics…</div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatCard label="F1 score" value={metrics.f1.toFixed(2)} tone="teal" />
-          <StatCard label="Precision" value={metrics.precision.toFixed(2)} />
-          <StatCard label="Recall" value={metrics.recall.toFixed(2)} />
-          <StatCard label="False positive rate" value={metrics.falsePositiveRate.toFixed(2)} tone="amber" />
+          <StatCard label="F1 score" value={typeof metrics.f1 === "number" ? metrics.f1.toFixed(2) : "Unavailable"} tone="teal" />
+          <StatCard label="Precision" value={typeof metrics.precision === "number" ? metrics.precision.toFixed(2) : "Unavailable"} />
+          <StatCard label="Recall" value={typeof metrics.recall === "number" ? metrics.recall.toFixed(2) : "Unavailable"} />
+          <StatCard label="False positive rate" value={typeof metrics.falsePositiveRate === "number" ? metrics.falsePositiveRate.toFixed(2) : "Unavailable"} tone="amber" />
           <StatCard label="False negative rate" unavailable={metrics.falseNegativeRate == null} value={metrics.falseNegativeRate} />
           <StatCard label="Latency" value={metrics.latencyMs} unit="ms" />
           <StatCard label="Sample count" value={metrics.sampleCount} />

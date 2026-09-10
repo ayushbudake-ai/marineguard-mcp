@@ -4,6 +4,7 @@ import ConfidenceSlider from "../pages/confidenceslider";
 import StatCard from "../pages/statcard";
 import DetectionTable from "../pages/detectiontable";
 import { uploadSurveyFile, runDetection } from "../pages/marineguard";
+import SonarVisualizer from "../components/Sonarvisualizer";
 
 export default function Analyze() {
   const [file, setFile] = useState(null);
@@ -30,6 +31,7 @@ export default function Analyze() {
 
   return (
     <div className="max-w-4xl">
+      <Sonarvisualizer />
       <h1 className="text-xl text-fg">Analyze</h1>
       <p className="mt-1 text-sm text-muted">
         Upload underwater survey data, set a confidence threshold, and run the detection pipeline.
@@ -64,7 +66,14 @@ export default function Analyze() {
             <StatCard label="Total detections" value={result.totalDetections} />
             <StatCard label="Accepted" value={result.acceptedCount} tone="teal" />
             <StatCard label="Filtered" value={result.filteredCount} tone="amber" />
-            <StatCard label="Avg. confidence" value={result.averageConfidence.toFixed(2)} />
+            <StatCard
+              label="Avg. confidence"
+              value={
+                typeof result.averageConfidence === "number"
+                  ? result.averageConfidence.toFixed(2)
+                  : "N/A"
+              }
+            />
           </div>
 
           <div className="mt-8">
@@ -88,11 +97,19 @@ export default function Analyze() {
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted">Confidence</dt>
-                <dd className="font-mono">{inspecting.confidence.toFixed(2)}</dd>
+                <dd className="font-mono">
+                  {typeof inspecting.confidence === "number"
+                    ? (inspecting.confidence > 1 ? inspecting.confidence / 100 : inspecting.confidence).toFixed(2)
+                    : "N/A"}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted">Coordinates</dt>
-                <dd className="font-mono">{inspecting.lat.toFixed(4)}, {inspecting.lng.toFixed(4)}</dd>
+                <dd className="font-mono">
+                  {typeof inspecting.lat === "number" && typeof inspecting.lng === "number"
+                    ? `${inspecting.lat.toFixed(4)}, ${inspecting.lng.toFixed(4)}`
+                    : "Location unavailable"}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted">Timestamp</dt>

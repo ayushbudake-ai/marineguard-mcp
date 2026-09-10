@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchReports, generateReport } from "./marineguard";
+import ExportCard from "../components/ExportCard";
 
 export default function Reports() {
   const [reports, setReports] = useState(null);
@@ -25,6 +26,29 @@ export default function Reports() {
       <p className="mt-1 text-sm text-muted">
         Evidence packets exported from completed surveys — PDF, GeoJSON, and S-100 formats.
       </p>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ExportCard
+          title="Detection CSV"
+          description="Export all detected marine debris"
+          type="csv"
+          count={347}
+        />
+
+        <ExportCard
+          title="Detection JSON"
+          description="Export structured detection data"
+          type="json"
+          count={347}
+        />
+
+        <ExportCard
+          title="Mission Report"
+          description="Export complete mission report"
+          type="report"
+          count={128}
+        />
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-3 border border-line bg-surface px-4 py-3">
         <span className="text-xs uppercase tracking-wide text-muted">Generate</span>

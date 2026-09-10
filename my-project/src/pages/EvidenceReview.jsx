@@ -1,10 +1,10 @@
 import { useParams, Link } from "react-router";
-import { MOCK_DETECTIONS } from "./mockdetection";
 import { buildMockEvidence } from "../utils/mockEvidence";
 import { evaluateRisk } from "../utils/firewall";
 import EvidenceOverlay from "../components/Evidence/EvidenceOverlay";
 import ExplainableTrace from "../components/Evidence/EvidenceTrace";
 import RiskBadge from "../components/RiskBadge";
+import { getMockDetectionById } from "../data/Mockdetection";
 
 // TODO: once evidence_overlay.py / tracer.py expose real output, fetch by
 // detection id instead of reading from the static mock array, e.g.
@@ -13,7 +13,7 @@ import RiskBadge from "../components/RiskBadge";
 
 export default function EvidenceReview() {
   const { detectionId } = useParams();
-  const detection = MOCK_DETECTIONS.find((d) => d.id === detectionId);
+  const detection = getMockDetectionById(detectionId);
 
   if (!detection) {
     return (
@@ -49,7 +49,12 @@ export default function EvidenceReview() {
           <div className="font-mono text-xs text-muted">{detection.id}</div>
           <h1 className="mt-1 text-xl text-fg">{detection.objectClass}</h1>
           <div className="mt-1 font-mono text-xs text-muted">
-            {detection.lat.toFixed(4)}, {detection.lng.toFixed(4)} — {new Date(detection.timestamp).toLocaleString()}
+            {typeof detection.lat === "number" && typeof detection.lng === "number"
+              ? `${detection.lat.toFixed(4)}, ${detection.lng.toFixed(4)}`
+              : (detection.location?.latitude != null && detection.location?.longitude != null)
+                ? `${detection.location.latitude.toFixed(4)}, ${detection.location.longitude.toFixed(4)}`
+                : "Location unavailable"}
+            {detection.timestamp ? ` — ${new Date(detection.timestamp).toLocaleString()}` : ""}
           </div>
         </div>
         <RiskBadge level={risk.level} />

@@ -13,7 +13,7 @@
 // four endpoints: POST /upload, POST /detect, GET /metrics, POST /reports
 // -----------------------------------------------------------------------
 
-import { MOCK_DETECTIONS, MOCK_METRICS, MOCK_REPORTS } from "./mockdetection";
+import { MOCK_DETECTIONS, MOCK_METRICS, MOCK_REPORTS } from "../data/Mockdetection";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -33,10 +33,16 @@ export async function runDetection({ fileId, confidenceThreshold }) {
   // }).then(r => r.json());
 
   const total = MOCK_DETECTIONS.length;
-  const accepted = MOCK_DETECTIONS.filter((d) => d.confidence >= confidenceThreshold);
+  const accepted = MOCK_DETECTIONS.filter((d) => {
+    const conf = d.confidence > 1 ? d.confidence / 100 : d.confidence;
+    return conf >= confidenceThreshold;
+  });
   const filtered = total - accepted.length;
   const avgConfidence =
-    accepted.reduce((sum, d) => sum + d.confidence, 0) / (accepted.length || 1);
+    accepted.reduce((sum, d) => {
+      const conf = d.confidence > 1 ? d.confidence / 100 : d.confidence;
+      return sum + conf;
+    }, 0) / (accepted.length || 1);
 
   return {
     fileId,
@@ -46,10 +52,20 @@ export async function runDetection({ fileId, confidenceThreshold }) {
     filteredCount: filtered,
     averageConfidence: Number(avgConfidence.toFixed(2)),
     processingTimeMs: 1180,
-    detections: MOCK_DETECTIONS.map((d) => ({
-      ...d,
-      status: d.confidence >= confidenceThreshold ? "accepted" : "filtered",
-    })),
+    detections: MOCK_DETECTIONS.map((d) => {
+      const conf = d.confidence > 1 ? d.confidence / 100 : d.confidence;
+      const lat = typeof d.lat === "number" ? d.lat : typeof d.latitude === "number" ? d.latitude : d.location?.latitude;
+      const lng = typeof d.lng === "number" ? d.lng : typeof d.longitude === "number" ? d.longitude : d.location?.longitude;
+      const objectClass = d.objectClass || d.type || d.category || "Marine Debris";
+      return {
+        ...d,
+        confidence: conf,
+        objectClass,
+        lat,
+        lng,
+        status: conf >= confidenceThreshold ? "accepted" : "filtered",
+      };
+    }),
   };
 }
 

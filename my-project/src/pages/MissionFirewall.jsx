@@ -3,7 +3,7 @@ import RiskBadge from "../components/RiskBadge";
 import FirewallTaxonomyTable from "../components/FirewallTaxonomyTables";
 import FirewallEventFeed from "../components/FirewallEventFeed";
 import StatCard from "./statcard.jsx";
-import { MOCK_DETECTIONS } from "./mockdetection";
+import { MOCK_DETECTIONS } from "../data/Mockdetection";
 import { evaluateRisk } from "../utils/firewall";
 
 // TODO: once marineguard/firewall/operator_ui.py has a real interface,

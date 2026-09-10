@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import { MOCK_DETECTIONS } from "../pages/mockdetection";
+import { MOCK_DETECTIONS } from "../data/Mockdetection";
 
 // TODO: replace MOCK_DETECTIONS with a fetch to the real geotagging output
 // once the backend exists (see src/api/marineguard.js). Prefer consuming
@@ -10,6 +10,8 @@ import { MOCK_DETECTIONS } from "../pages/mockdetection";
 const statusColor = {
   accepted: "#3FB8AF",
   filtered: "#7C96A0",
+  confirmed: "#3FB8AF",
+  review: "#F4B860",
 };
 
 export default function DetectionMap() {
@@ -37,15 +39,25 @@ export default function DetectionMap() {
       {detections.map((d) => (
         <leafletComponents.CircleMarker
           key={d.id}
-          center={[d.lat, d.lng]}
+          center={[d.location.latitude, d.location.longitude]}
           radius={7}
-          pathOptions={{ color: statusColor[d.status], fillColor: statusColor[d.status], fillOpacity: 0.85, weight: 2 }}
+          pathOptions={{
+            color: statusColor[d.status.toLowerCase()] ?? "#7C96A0",
+            fillColor: statusColor[d.status.toLowerCase()] ?? "#7C96A0",
+            fillOpacity: 0.85,
+            weight: 2,
+          }}
         >
           <leafletComponents.Popup>
             <div style={{ fontFamily: "monospace", fontSize: 12 }}>
               <div>{d.id}</div>
-              <div>{d.objectClass}</div>
-              <div>confidence {d.confidence.toFixed(2)}</div>
+              <div>{d.objectClass || d.type || "Marine Debris"}</div>
+              <div>
+                confidence{" "}
+                {typeof d.confidence === "number"
+                  ? (d.confidence > 1 ? d.confidence / 100 : d.confidence).toFixed(2)
+                  : "N/A"}
+              </div>
               <div>{new Date(d.timestamp).toLocaleString()}</div>
             </div>
           </leafletComponents.Popup>

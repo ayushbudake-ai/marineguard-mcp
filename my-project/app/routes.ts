@@ -10,8 +10,9 @@
 import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 
 export default [
-  layout("../src/layouts/DashboardLayout.jsx", [
+  layout("../src/layouts/marineguardlayout.updated.jsx", [
     index("../src/pages/analyze.jsx"),
+    route("dashboard", "../src/pages/dashboard.jsx"),
     route("map", "../src/layouts/detectionmap.jsx"),
     route("firewall", "../src/pages/MissionFirewall.jsx"),
     route("mcp-tools", "../src/pages/McpToolServer.updated.jsx"),

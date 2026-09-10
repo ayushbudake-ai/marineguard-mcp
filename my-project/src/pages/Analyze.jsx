@@ -4,8 +4,15 @@ import ConfidenceSlider from "./confidenceslider";
 import StatCard from "./statcard";
 import DetectionTable from "./detectiontable";
 import { uploadSurveyFile, runDetection } from "./marineguard";
+import SonarVisualizer from "../components/Sonarvisualizer";
+import {
+  getSonarDetections,
+  getDetectionStats,
+  runMockDetection,
+} from "../data/Mockdetection";
 
 export default function Analyze() {
+  const sonarDetections = getSonarDetections();
   const [file, setFile] = useState(null);
   const [uploadedFileId, setUploadedFileId] = useState(null);
   const [threshold, setThreshold] = useState(0.5);
@@ -45,6 +52,7 @@ export default function Analyze() {
 
   return (
     <div className="max-w-4xl">
+      <SonarVisualizer detections={sonarDetections} />
       <h1 className="text-xl text-fg">Analyze</h1>
       <p className="mt-1 text-sm text-muted">
         Upload underwater survey data, set a confidence threshold, and run the detection pipeline.
@@ -85,7 +93,14 @@ export default function Analyze() {
             <StatCard label="Total detections" value={result.totalDetections} />
             <StatCard label="Accepted" value={result.acceptedCount} tone="teal" />
             <StatCard label="Filtered" value={result.filteredCount} tone="amber" />
-            <StatCard label="Avg. confidence" value={result.averageConfidence.toFixed(2)} />
+            <StatCard
+              label="Avg. confidence"
+              value={
+                typeof result.averageConfidence === "number"
+                  ? result.averageConfidence.toFixed(2)
+                  : "N/A"
+              }
+            />
           </div>
 
           <div className="mt-8">
