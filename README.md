@@ -1,4 +1,4 @@
-# 🌊 MarineGuard MCP
+## 🌊 MarineGuard MCP
 
 ### AI-Powered Automated Underwater Marine Debris & Anomaly Detection
 
