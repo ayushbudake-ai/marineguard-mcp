@@ -2,6 +2,11 @@
 
 ### AI-Powered Automated Underwater Marine Debris & Anomaly Detection
 
+## License
+
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
+
 **SIH 2026 — Problem Statement SIH26057**
 
 MarineGuard MCP is an AI-based underwater marine debris and anomaly detection system designed for **side-scan sonar imagery**.
